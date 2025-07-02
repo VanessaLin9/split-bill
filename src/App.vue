@@ -10,8 +10,16 @@
         <!-- 成員管理 -->
         <section class="bg-gray-300 p-4 rounded shadow">
           <h2 class="text-lg font-semibold mb-2">👥 成員管理</h2>
+          <!-- 成員清單 -->
           <div class="flex flex-wrap gap-2 mb-2">
-            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded" v-for="member in members" :key="member">{{ member }}</span>
+            <div
+              v-for="member in members"
+              :key="member"
+              class="flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded"
+            >
+              {{ member }}
+              <button @click="removeMember(member)" class="ml-2 text-red-500 hover:text-red-700">❌</button>
+            </div>
           </div>
           <div class="flex gap-2">
             <input v-model="newMember" type="text" placeholder="輸入新成員" class="border p-2 flex-1 rounded" />
@@ -135,6 +143,20 @@ const addMember = () => {
     members.value.push(newMember.value.trim())
     newMember.value = ''
   }
+}
+
+const removeMember = (target) => {
+  // 檢查是否已在帳務中使用
+  const isUsed = expenses.value.some(e =>
+    e.paidBy === target || e.sharedWith.includes(target)
+  )
+  if (isUsed) {
+    alert(`無法刪除「${target}」，因為已經在記帳紀錄中出現過。`)
+    return
+  }
+
+  // 否則直接刪除
+  members.value = members.value.filter(m => m !== target)
 }
 
 const addExpense = () => {
