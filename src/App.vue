@@ -118,7 +118,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="removeMember"
+            @remove-member="(member) => removeMember(member)"
           />
 
           <!-- 新增花費頁 -->
@@ -138,7 +138,7 @@
               if (idx === -1) newExpense.sharedWith.push(member)
               else newExpense.sharedWith.splice(idx, 1)
             }"
-            @submit="addExpense"
+            @submit="submitNewExpense"
           />
 
           <!-- 消費明細頁 -->
@@ -189,7 +189,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="removeMember"
+            @remove-member="(member) => removeMember(member)"
           />
         </div>
 
@@ -209,7 +209,7 @@
               if (idx === -1) newExpense.sharedWith.push(member)
               else newExpense.sharedWith.splice(idx, 1)
             }"
-            @submit="addExpense"
+            @submit="submitNewExpense"
           />
         </div>  
 
@@ -247,15 +247,19 @@ import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
 import { tabs } from './config/tabs'
 import { useLanguage } from './composable/useLanguage'
+import { useMembers } from './composable/useMembers'
+import { useExpenses } from './composable/useExpenses'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 語言相關（composable）
 const { language, t, toggleLanguage } = useLanguage()
 
-// 響應式狀態
-const members = ref(['小明', '小美', '小華'])
-const newMember = ref('')
-const expenses = ref([])
+// 成員相關（composable）
+const { members, newMember, addMember, removeMember } = useMembers()
+
+// 花費相關（composable）
+const { expenses, addExpense: addNewExpense, removeExpense } = useExpenses()
+
 const newExpense = ref({
   amount: '',
   paidBy: '',
@@ -298,60 +302,32 @@ const payments = computed(() => {
 
 // 最終結算計算
 const finalSettlements = computed(() => {
-  const balances = {}
-  
-  // 計算每人淨餘額 (付款 - 應付)
-  members.value.forEach(member => {
-    const paid = payments.value[member] || 0
-    const owes = expenseBreakdown.value[member] || 0
-    balances[member] = paid - owes
-  })
-
-  const settlements = []
-  const creditors = Object.entries(balances).filter(([, balance]) => balance > 0)
-  const debtors = Object.entries(balances).filter(([, balance]) => balance < 0)
-
-  // 簡單結算算法
-  creditors.forEach(([creditor, creditAmount]) => {
-    let remainingCredit = creditAmount
-    
-    debtors.forEach(([debtor, debtAmount]) => {
-      if (remainingCredit > 0 && debtAmount < 0) {
-        const settlementAmount = Math.min(remainingCredit, Math.abs(debtAmount))
-        if (settlementAmount > 0.01) {
-          settlements.push({
-            from: debtor,
-            to: creditor,
-            amount: settlementAmount
-          })
-          remainingCredit -= settlementAmount
-          debtors.find(d => d[0] === debtor)[1] += settlementAmount
-        }
+  const groups = {}
+  expenses.value.forEach(expense => {
+    const splitAmount = expense.amount / expense.sharedWith.length
+    expense.sharedWith.forEach(participant => {
+      if(participant !== expense.paidBy) {
+        const payKey = `${expense.paidBy}->${participant}`
+        groups[payKey] = (groups[payKey] || 0) + splitAmount
       }
     })
   })
-
-  return settlements
+  const reverseGroups = {}
+  Object.keys(groups).forEach(key => {
+    const [paidBy, participant] = key.split('->')
+    const amount = groups[key]
+    const reverseKey = `${participant}->${paidBy}`
+    if(reverseGroups[reverseKey]) Math.abs(reverseGroups[reverseKey] -= amount)
+    else reverseGroups[key] = groups[key]
+  })
+  const finalSettlements = []
+  Object.keys(reverseGroups).forEach(key => {
+    const [paidBy, participant] = key.split('->')
+    const amount = reverseGroups[key]
+    finalSettlements.push({ from: paidBy, to: participant, amount: amount })
+  })
+  return finalSettlements
 })
-
-// 方法
-const addMember = () => {
-  if (newMember.value.trim() && !members.value.includes(newMember.value)) {
-    members.value.push(newMember.value.trim())
-    newMember.value = ''
-  }
-}
-
-const removeMember = (target) => {
-  const isUsed = expenses.value.some(e =>
-    e.paidBy === target || e.sharedWith.includes(target)
-  )
-  if (isUsed) {
-    alert(`無法刪除「${target}」，因為已經在記帳紀錄中出現過。`)
-    return
-  }
-  members.value = members.value.filter(m => m !== target)
-}
 
 // 響應式檢測
 const checkScreenSize = () => {
@@ -367,31 +343,19 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
 
-// 暫時保留的原有方法（之後會重構）
-const addExpense = () => {
-  if (!newExpense.value.amount || !newExpense.value.paidBy || newExpense.value.sharedWith.length === 0) {
+// 表單提交
+const submitNewExpense = () => {
+  const ok = addNewExpense({
+    amount: newExpense.value.amount,
+    paidBy: newExpense.value.paidBy,
+    description: newExpense.value.description,
+    sharedWith: newExpense.value.sharedWith,
+  })
+  if (!ok) {
     alert(t('pleaseSelectParticipants'))
     return
   }
-  
-  expenses.value.push({
-    amount: Number(newExpense.value.amount),
-    paidBy: newExpense.value.paidBy,
-    description: newExpense.value.description,
-    sharedWith: [...newExpense.value.sharedWith]
-  })
-  
-  // 清空表單
-  newExpense.value = {
-    amount: '',
-    paidBy: '',
-    description: '',
-    sharedWith: [],
-  }
-}
-
-const removeExpense = (idx) => {
-  expenses.value.splice(idx, 1)
+  newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
 }
 </script>
 
