@@ -88,20 +88,20 @@
       </div>
 
       <!-- 手機版分頁導航 -->
-      <div class="bg-white/5 border-b border-white/10 p-1">
+      <div class="bg-white/5 border-b border-white/10">
         <div class="flex justify-around">
           <button
             v-for="tab in tabs"
             :key="tab.key"
             @click="activeTab = tab.key"
             :class="[
-              'flex-1 h-16 flex flex-col items-center justify-center gap-1 rounded-none transition-all',
+              'flex-1 h-14 flex flex-col items-center justify-center gap-1 rounded-none transition-all',
               activeTab === tab.key
                 ? `${tab.activeClass} text-white border-b-2 ${tab.borderClass}`
                 : 'bg-transparent text-white/70'
             ]"
           >
-            <component :is="tab.icon" class="w-5 h-5" />
+            <component :is="tab.icon" class="w-5 h-1" />
             <span class="text-xs">{{ tab.label }}</span>
           </button>
         </div>
