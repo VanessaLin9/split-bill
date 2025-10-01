@@ -245,6 +245,8 @@ import MembersPanel from './components/MembersPanel.vue'
 import AddExpensePanel from './components/AddExpensePanel.vue'
 import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
+import { translations } from './config/translation'
+import { tabs } from './config/tabs'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 響應式狀態
@@ -262,91 +264,6 @@ const newExpense = ref({
 const language = ref('zh')
 const isDesktop = ref(false)
 const activeTab = ref('members')
-
-// 翻譯對照表
-const translations = {
-  zh: {
-    title: '朋友出遊分帳',
-    memberManagement: '成員管理',
-    addMember: '新增成員',
-    memberName: '成員姓名',
-    addExpense: '新增花費',
-    amount: '金額',
-    payer: '付款人',
-    selectPayer: '誰付款？',
-    description: '項目說明',
-    participants: '分帳成員',
-    addExpenseButton: '新增花費',
-    expenseDetails: '消費明細',
-    noExpenses: '目前沒有消費記錄',
-    untitled: '未命名',
-    paidBy: '付款人',
-    split: '分攤明細',
-    settlementSummary: '結帳明細',
-    totalExpenses: '總花費',
-    perPerson: '每人平均',
-    shouldPay: '應付',
-    owes: '欠',
-    yuan: '元',
-    pleaseSelectParticipants: '請選擇分帳成員'
-  },
-  en: {
-    title: 'Friends Trip Bill Split',
-    memberManagement: 'Member Management',
-    addMember: 'Add Member',
-    memberName: 'Member Name',
-    addExpense: 'Add Expense',
-    amount: 'Amount',
-    payer: 'Payer',
-    selectPayer: 'Who paid?',
-    description: 'Description',
-    participants: 'Split Among',
-    addExpenseButton: 'Add Expense',
-    expenseDetails: 'Expense Details',
-    noExpenses: 'No expenses recorded yet',
-    untitled: 'Untitled',
-    paidBy: 'Paid by',
-    split: 'Split Details',
-    settlementSummary: 'Settlement Summary',
-    totalExpenses: 'Total Expenses',
-    perPerson: 'Per Person',
-    shouldPay: 'Should Pay',
-    owes: 'owes',
-    yuan: ''
-  }
-}
-
-// 分頁配置
-const tabs = [
-  {
-    key: 'members',
-    label: 'Members',
-    icon: 'svg', // 這裡用字符串，實際會用組件
-    activeClass: 'bg-blue-500/20',
-    borderClass: 'border-blue-400'
-  },
-  {
-    key: 'add',
-    label: 'Add',
-    icon: 'svg',
-    activeClass: 'bg-indigo-500/20',
-    borderClass: 'border-indigo-400'
-  },
-  {
-    key: 'expenses',
-    label: 'Expenses',
-    icon: 'svg',
-    activeClass: 'bg-cyan-500/20',
-    borderClass: 'border-cyan-400'
-  },
-  {
-    key: 'settlement',
-    label: 'Split',
-    icon: 'svg',
-    activeClass: 'bg-purple-500/20',
-    borderClass: 'border-purple-400'
-  }
-]
 
 // 計算屬性
 const totalExpenses = computed(() => {
