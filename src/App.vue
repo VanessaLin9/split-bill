@@ -302,40 +302,31 @@ const payments = computed(() => {
 
 // 最終結算計算
 const finalSettlements = computed(() => {
-  const balances = {}
-  
-  // 計算每人淨餘額 (付款 - 應付)
-  members.value.forEach(member => {
-    const paid = payments.value[member] || 0
-    const owes = expenseBreakdown.value[member] || 0
-    balances[member] = paid - owes
-  })
-
-  const settlements = []
-  const creditors = Object.entries(balances).filter(([, balance]) => balance > 0)
-  const debtors = Object.entries(balances).filter(([, balance]) => balance < 0)
-
-  // 簡單結算算法
-  creditors.forEach(([creditor, creditAmount]) => {
-    let remainingCredit = creditAmount
-    
-    debtors.forEach(([debtor, debtAmount]) => {
-      if (remainingCredit > 0 && debtAmount < 0) {
-        const settlementAmount = Math.min(remainingCredit, Math.abs(debtAmount))
-        if (settlementAmount > 0.01) {
-          settlements.push({
-            from: debtor,
-            to: creditor,
-            amount: settlementAmount
-          })
-          remainingCredit -= settlementAmount
-          debtors.find(d => d[0] === debtor)[1] += settlementAmount
-        }
+  const groups = {}
+  expenses.value.forEach(expense => {
+    const splitAmount = expense.amount / expense.sharedWith.length
+    expense.sharedWith.forEach(participant => {
+      if(participant !== expense.paidBy) {
+        const payKey = `${expense.paidBy}->${participant}`
+        groups[payKey] = (groups[payKey] || 0) + splitAmount
       }
     })
   })
-
-  return settlements
+  const reverseGroups = {}
+  Object.keys(groups).forEach(key => {
+    const [paidBy, participant] = key.split('->')
+    const amount = groups[key]
+    const reverseKey = `${participant}->${paidBy}`
+    if(reverseGroups[reverseKey]) Math.abs(reverseGroups[reverseKey] -= amount)
+    else reverseGroups[key] = groups[key]
+  })
+  const finalSettlements = []
+  Object.keys(reverseGroups).forEach(key => {
+    const [paidBy, participant] = key.split('->')
+    const amount = reverseGroups[key]
+    finalSettlements.push({ from: paidBy, to: participant, amount: amount })
+  })
+  return finalSettlements
 })
 
 // 響應式檢測
