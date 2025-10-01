@@ -250,7 +250,7 @@ import { useLanguage } from './composable/useLanguage'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 語言相關（composable）
-const { language, t, toggleLanguage } = useLanguage('zh')
+const { language, t, toggleLanguage } = useLanguage()
 
 // 響應式狀態
 const members = ref(['小明', '小美', '小華'])
