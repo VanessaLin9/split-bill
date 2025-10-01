@@ -118,7 +118,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="(member) => removeMember(member, expenses)"
+            @remove-member="(member) => removeMember(member)"
           />
 
           <!-- 新增花費頁 -->
@@ -138,7 +138,7 @@
               if (idx === -1) newExpense.sharedWith.push(member)
               else newExpense.sharedWith.splice(idx, 1)
             }"
-            @submit="addExpense"
+            @submit="submitNewExpense"
           />
 
           <!-- 消費明細頁 -->
@@ -189,7 +189,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="(member) => removeMember(member, expenses)"
+            @remove-member="(member) => removeMember(member)"
           />
         </div>
 
@@ -209,7 +209,7 @@
               if (idx === -1) newExpense.sharedWith.push(member)
               else newExpense.sharedWith.splice(idx, 1)
             }"
-            @submit="addExpense"
+            @submit="submitNewExpense"
           />
         </div>  
 
@@ -248,6 +248,7 @@ import SettlementPanel from './components/SettlementPanel.vue'
 import { tabs } from './config/tabs'
 import { useLanguage } from './composable/useLanguage'
 import { useMembers } from './composable/useMembers'
+import { useExpenses } from './composable/useExpenses'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 語言相關（composable）
@@ -255,7 +256,10 @@ const { language, t, toggleLanguage } = useLanguage()
 
 // 成員相關（composable）
 const { members, newMember, addMember, removeMember } = useMembers()
-const expenses = ref([])
+
+// 花費相關（composable）
+const { expenses, addExpense: addNewExpense, removeExpense } = useExpenses()
+
 const newExpense = ref({
   amount: '',
   paidBy: '',
@@ -334,8 +338,6 @@ const finalSettlements = computed(() => {
   return settlements
 })
 
-// 方法
-
 // 響應式檢測
 const checkScreenSize = () => {
   isDesktop.value = window.innerWidth >= 1024
@@ -350,31 +352,19 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkScreenSize)
 })
 
-// 暫時保留的原有方法（之後會重構）
-const addExpense = () => {
-  if (!newExpense.value.amount || !newExpense.value.paidBy || newExpense.value.sharedWith.length === 0) {
+// 表單提交
+const submitNewExpense = () => {
+  const ok = addNewExpense({
+    amount: newExpense.value.amount,
+    paidBy: newExpense.value.paidBy,
+    description: newExpense.value.description,
+    sharedWith: newExpense.value.sharedWith,
+  })
+  if (!ok) {
     alert(t('pleaseSelectParticipants'))
     return
   }
-  
-  expenses.value.push({
-    amount: Number(newExpense.value.amount),
-    paidBy: newExpense.value.paidBy,
-    description: newExpense.value.description,
-    sharedWith: [...newExpense.value.sharedWith]
-  })
-  
-  // 清空表單
-  newExpense.value = {
-    amount: '',
-    paidBy: '',
-    description: '',
-    sharedWith: [],
-  }
-}
-
-const removeExpense = (idx) => {
-  expenses.value.splice(idx, 1)
+  newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
 }
 </script>
 
