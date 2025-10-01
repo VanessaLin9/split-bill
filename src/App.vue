@@ -118,7 +118,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="removeMember"
+            @remove-member="(member) => removeMember(member, expenses)"
           />
 
           <!-- 新增花費頁 -->
@@ -189,7 +189,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="removeMember"
+            @remove-member="(member) => removeMember(member, expenses)"
           />
         </div>
 
@@ -247,14 +247,14 @@ import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
 import { tabs } from './config/tabs'
 import { useLanguage } from './composable/useLanguage'
+import { useMembers } from './composable/useMembers'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 語言相關（composable）
 const { language, t, toggleLanguage } = useLanguage()
 
-// 響應式狀態
-const members = ref(['小明', '小美', '小華'])
-const newMember = ref('')
+// 成員相關（composable）
+const { members, newMember, addMember, removeMember } = useMembers()
 const expenses = ref([])
 const newExpense = ref({
   amount: '',
@@ -335,23 +335,6 @@ const finalSettlements = computed(() => {
 })
 
 // 方法
-const addMember = () => {
-  if (newMember.value.trim() && !members.value.includes(newMember.value)) {
-    members.value.push(newMember.value.trim())
-    newMember.value = ''
-  }
-}
-
-const removeMember = (target) => {
-  const isUsed = expenses.value.some(e =>
-    e.paidBy === target || e.sharedWith.includes(target)
-  )
-  if (isUsed) {
-    alert(`無法刪除「${target}」，因為已經在記帳紀錄中出現過。`)
-    return
-  }
-  members.value = members.value.filter(m => m !== target)
-}
 
 // 響應式檢測
 const checkScreenSize = () => {
