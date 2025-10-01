@@ -245,9 +245,12 @@ import MembersPanel from './components/MembersPanel.vue'
 import AddExpensePanel from './components/AddExpensePanel.vue'
 import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
-import { translations } from './config/translation'
 import { tabs } from './config/tabs'
+import { useLanguage } from './composable/useLanguage'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+
+// 語言相關（composable）
+const { language, t, toggleLanguage } = useLanguage('zh')
 
 // 響應式狀態
 const members = ref(['小明', '小美', '小華'])
@@ -260,8 +263,6 @@ const newExpense = ref({
   sharedWith: [],
 })
 
-// 語言相關
-const language = ref('zh')
 const isDesktop = ref(false)
 const activeTab = ref('members')
 
@@ -333,16 +334,7 @@ const finalSettlements = computed(() => {
   return settlements
 })
 
-// 翻譯函數
-const t = (key) => {
-  return translations[language.value][key] || key
-}
-
 // 方法
-const toggleLanguage = () => {
-  language.value = language.value === 'zh' ? 'en' : 'zh'
-}
-
 const addMember = () => {
   if (newMember.value.trim() && !members.value.includes(newMember.value)) {
     members.value.push(newMember.value.trim())
