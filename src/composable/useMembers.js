@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 export function useMembers() {
-  const members = ref(localStorage.getItem('members') || ['Penguin', 'Tank', 'Chad'])
+  const members = ref(localStorage.getItem('members') || ['企鵝', '熊熊', '查德'])
   const newMember = ref('')
 
   const addMember = () => {

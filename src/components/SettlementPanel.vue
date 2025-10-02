@@ -56,30 +56,38 @@
         <div v-if="finalSettlements.length === 0" class="text-center py-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg border border-green-400/30">
           <div class="text-green-300 font-medium text-sm">All settled!</div>
         </div>
-        <div v-else class="space-y-2">
-          <div
-            v-for="(settlement, index) in finalSettlements"
-            :key="index"
-            class="p-3 rounded-lg bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-400/20"
-          >
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-1 text-xs">
-                <span class="bg-blue-500/20 text-blue-200 border border-blue-400/30 px-2 py-1 rounded text-xs">
-                  {{ settlement.from }}
-                </span>
-                <span class="text-white/70 text-xs">{{ t('owes') }}</span>
-                <span class="bg-green-500/20 text-green-200 border border-green-400/30 px-2 py-1 rounded text-xs">
-                  {{ settlement.to }}
-                </span>
-              </div>
-            </div>
-            <div class="text-center">
-              <span class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
-                ${{ settlement.amount.toFixed(2) }}{{ t('yuan') }}
-              </span>
-            </div>
-          </div>
-        </div>
+
+        <div
+  v-for="(settlements, debtor) in finalSettlements"
+  :key="debtor"
+  class="p-3 m-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-400/20"
+>
+  <!-- 欠款人標頭列 -->
+  <div class="flex items-center gap-2 mb-2">
+    <span class="bg-blue-500/20 text-blue-200 border border-blue-400/30 px-2 py-1 rounded text-xs">
+      {{ debtor }}
+    </span>
+    <span class="text-white/70 text-xs">{{ t('owes') }}</span>
+  </div>
+
+  <!-- 欠誰多少，獨立成清單 -->
+  <ul class="space-y-2 pl-20">
+    <li
+      v-for="item in settlements"
+      :key="debtor + '->' + item.to"
+      class="flex items-center justify-between mb-2"
+    >
+      <span class="bg-green-500/20 text-green-200 border border-green-400/30 px-2 py-1 rounded text-xs">
+        {{ item.to }}
+      </span>
+      <span class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
+        ${{ item.amount.toFixed(2) }}{{ t('yuan') }}
+      </span>
+    </li>
+  </ul>
+</div>
+
+
       </div>
     </div>
   </div>
@@ -99,7 +107,7 @@ const props = defineProps<{
   totalExpenses: number
   perPersonAverage: number
   expenseBreakdown: Record<string, number>
-  finalSettlements: { from: string; to: string; amount: number }[]
+  finalSettlements: { participant: { from: string; to: string; amount: number }[] }
   t: (key: string) => string
   leftAlign?: boolean
 }>()
