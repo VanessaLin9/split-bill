@@ -302,32 +302,71 @@ const payments = computed(() => {
 
 // 最終結算計算
 const finalSettlements = computed(() => {
+  // 1) 先累積 payer -> participant 的金額
   const groups = {}
-  expenses.value.forEach(expense => {
-    const splitAmount = expense.amount / expense.sharedWith.length
-    expense.sharedWith.forEach(participant => {
-      if(participant !== expense.paidBy) {
-        const payKey = `${expense.paidBy}->${participant}`
-        groups[payKey] = (groups[payKey] || 0) + splitAmount
-      }
-    })
-  })
-  const reverseGroups = {}
-  Object.keys(groups).forEach(key => {
-    const [paidBy, participant] = key.split('->')
+  for (const expense of expenses.value) {
+    const shared = expense.sharedWith || []
+    if (shared.length === 0) continue // 避免除以 0
+
+    const splitAmount = expense.amount / shared.length
+    for (const participant of shared) {
+      if (participant === expense.paidBy) continue
+      const key = `${expense.paidBy}->${participant}`
+      groups[key] = (groups[key] || 0) + splitAmount
+    }
+  }
+
+  // 2) 將 A->B 與 B->A 互相沖銷，只留下同向的正餘額
+  const netGroups = {}
+  for (const key of Object.keys(groups)) {
     const amount = groups[key]
-    const reverseKey = `${participant}->${paidBy}`
-    if(reverseGroups[reverseKey]) Math.abs(reverseGroups[reverseKey] -= amount)
-    else reverseGroups[key] = groups[key]
-  })
-  const finalSettlements = []
-  Object.keys(reverseGroups).forEach(key => {
+    if (amount <= 0) continue
+
+    const [a, b] = key.split('->')
+    const reverseKey = `${b}->${a}`
+
+    if (netGroups[reverseKey] != null) {
+      // 若已有反向金額，做淨額
+      const diff = netGroups[reverseKey] - amount
+      if (diff > 1e-9) {
+        // 反向還有剩，保留反向的正餘額
+        netGroups[reverseKey] = diff
+      } else if (diff < -1e-9) {
+        // 正向有剩，改存正向餘額
+        delete netGroups[reverseKey]
+        netGroups[key] = -diff
+      } else {
+        // 剛好抵銷為 0
+        delete netGroups[reverseKey]
+      }
+    } else {
+      // 沒有反向就累加到同 key 上
+      netGroups[key] = (netGroups[key] || 0) + amount
+    }
+  }
+
+  // 3) 輸出結果（四捨五入到分）
+  const final = []
+  for (const key of Object.keys(netGroups)) {
+    const raw = netGroups[key]
+    const amount = Math.round(raw * 100) / 100 // 兩位小數
+    if (amount <= 0) continue
+
     const [paidBy, participant] = key.split('->')
-    const amount = reverseGroups[key]
-    finalSettlements.push({ from: paidBy, to: participant, amount: amount })
-  })
-  return finalSettlements
+    final.push({ from: participant, to: paidBy, amount })
+  }
+  console.log(final)
+  const groupedSettlements = final.reduce((acc, item) => {
+    if(!acc[item.from]) {
+      acc[item.from] = []
+    }
+    acc[item.from].push(item)
+    return acc
+  }, {})
+  console.log(groupedSettlements)
+  return groupedSettlements
 })
+
 
 // 響應式檢測
 const checkScreenSize = () => {
