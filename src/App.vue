@@ -28,15 +28,27 @@
             </div>
           </div>
           
-          <button
-            @click="toggleLanguage"
-            class="flex items-center gap-3 border border-white/20 bg-white/5 text-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 px-4 py-2 rounded-lg"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-            <span class="font-medium">{{ language === 'zh' ? 'English' : '中文' }}</span>
-          </button>
+          <div class="flex items-center gap-3">
+            <button
+              @click="toggleLanguage"
+              class="flex items-center gap-3 border border-white/20 bg-white/5 text-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25 px-4 py-2 rounded-lg"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              <span class="font-medium">{{ language === 'zh' ? 'English' : '中文' }}</span>
+            </button>
+            
+            <button
+              @click="restoreDefaultSettings"
+              class="flex items-center gap-3 border border-white/20 bg-white/5 text-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25 px-4 py-2 rounded-lg"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span class="font-medium">{{ t('restoreDefaults') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -58,15 +70,27 @@
             </div>
           </div>
           
-          <button
-            @click="toggleLanguage"
-            class="border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm text-sm px-3 py-2 rounded-lg flex items-center gap-2"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-            {{ language === 'zh' ? 'EN' : '中文' }}
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              @click="toggleLanguage"
+              class="border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm text-sm px-3 py-2 rounded-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {{ language === 'zh' ? 'EN' : '中文' }}
+            </button>
+            
+            <button
+              @click="restoreDefaultSettings"
+              class="border border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm text-sm px-3 py-2 rounded-lg flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span class="hidden sm:inline">{{ t('restoreDefaults') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -258,7 +282,7 @@ const { language, t, toggleLanguage } = useLanguage()
 const { members, newMember, addMember, removeMember } = useMembers()
 
 // 花費相關（composable）
-const { expenses, addExpense: addNewExpense, removeExpense } = useExpenses()
+const { expenses, addExpense: addNewExpense, removeExpense, clearExpenses } = useExpenses()
 
 const newExpense = ref({
   amount: '',
@@ -355,7 +379,6 @@ const finalSettlements = computed(() => {
     const [paidBy, participant] = key.split('->')
     final.push({ from: participant, to: paidBy, amount })
   }
-  console.log(final)
   const groupedSettlements = final.reduce((acc, item) => {
     if(!acc[item.from]) {
       acc[item.from] = []
@@ -363,7 +386,6 @@ const finalSettlements = computed(() => {
     acc[item.from].push(item)
     return acc
   }, {})
-  console.log(groupedSettlements)
   return groupedSettlements
 })
 
@@ -395,6 +417,26 @@ const submitNewExpense = () => {
     return
   }
   newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
+}
+
+// 恢復預設設定
+const restoreDefaultSettings = () => {
+  if (confirm(t('confirmRestore'))) {
+    // 恢復預設成員
+    members.value = ['企鵝', '熊熊', '查德']
+    localStorage.setItem('members', JSON.stringify(members.value))
+    
+    // 清除所有消費記錄
+    clearExpenses()
+    
+    // 重置新成員輸入框
+    newMember.value = ''
+    
+    // 重置新消費表單
+    newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
+    
+    alert(t('restoreSuccess'))
+  }
 }
 </script>
 

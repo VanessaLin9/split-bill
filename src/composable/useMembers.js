@@ -1,13 +1,13 @@
 import { ref } from 'vue'
 
 export function useMembers() {
-  const members = ref(localStorage.getItem('members') || ['企鵝', '熊熊', '查德'])
+  const members = ref(JSON.parse(localStorage.getItem('members') || '["企鵝", "熊熊", "查德"]'))
   const newMember = ref('')
 
   const addMember = () => {
     if (newMember.value.trim() && !members.value.includes(newMember.value)) {
       members.value.push(newMember.value.trim())
-      localStorage.setItem('members', members.value)
+      localStorage.setItem('members', JSON.stringify(members.value))
       newMember.value = ''
     }
   }
@@ -21,7 +21,7 @@ export function useMembers() {
       return
     }
     members.value = members.value.filter(m => m !== target)
-    localStorage.setItem('members', members.value)
+    localStorage.setItem('members', JSON.stringify(members.value))
   }
 
   return {
