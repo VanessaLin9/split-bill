@@ -421,7 +421,7 @@ const submitNewExpense = () => {
 
 // 恢復預設設定
 const restoreDefaultSettings = () => {
-  if (confirm(language.value === 'zh' ? '確定要恢復預設設定嗎？這將清除所有成員和消費記錄。' : 'Are you sure you want to restore default settings? This will clear all members and expense records.')) {
+  if (confirm(t('confirmRestore'))) {
     // 恢復預設成員
     members.value = ['企鵝', '熊熊', '查德']
     localStorage.setItem('members', JSON.stringify(members.value))
@@ -435,7 +435,7 @@ const restoreDefaultSettings = () => {
     // 重置新消費表單
     newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
     
-    alert(language.value === 'zh' ? '已恢復預設設定！' : 'Default settings restored!')
+    alert(t('restoreSuccess'))
   }
 }
 </script>

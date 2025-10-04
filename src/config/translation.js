@@ -23,7 +23,9 @@ export const translations = {
       owes: '欠',
       yuan: '元',
       pleaseSelectParticipants: '請選擇分帳成員',
-      restoreDefaults: '恢復預設'
+      restoreDefaults: '恢復預設',
+      confirmRestore: '確定要恢復預設設定嗎？這將清除所有成員和消費記錄。',
+      restoreSuccess: '已恢復預設設定！'
     },
     en: {
       title: 'Friends Trip Bill Split',
@@ -48,6 +50,8 @@ export const translations = {
       shouldPay: 'Should Pay',
       owes: 'owes',
       yuan: '',
-      restoreDefaults: 'Restore Defaults'
+      restoreDefaults: 'Restore Defaults',
+      confirmRestore: 'Are you sure you want to restore default settings? This will clear all members and expense records.',
+      restoreSuccess: 'Default settings restored!'
     }
   }
