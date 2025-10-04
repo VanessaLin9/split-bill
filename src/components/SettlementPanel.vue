@@ -60,24 +60,24 @@
         <div
   v-for="(settlements, debtor) in finalSettlements"
   :key="debtor"
-  class="p-3 m-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-400/20"
+  class="p-3 m-2 rounded-lg bg-gradient-to-r from-blue-500/10 to-green-500/10 border border-blue-400/20 flex items-stretch"
 >
   <!-- 欠款人標頭列 -->
-  <div class="flex items-center gap-2 mb-2">
-    <span class="bg-blue-500/20 text-blue-200 border border-blue-400/30 px-2 py-1 rounded text-xs">
+  <div class="flex items-center justify-between gap-2 px-2 py-1 w-2/5 bg-blue-500/20 text-blue-200 border border-blue-400/30 rounded">
+    <span class="text-xs text-white">
       {{ debtor }}
     </span>
-    <span class="text-white/70 text-xs">{{ t('owes') }}</span>
+    <span class="text-white/30 text-xs">{{ t('owes') }}</span>
   </div>
 
   <!-- 欠誰多少，獨立成清單 -->
-  <ul class="space-y-2 pl-20">
+  <ul class="space-y-2 px-2 w-full">
     <li
       v-for="item in settlements"
       :key="debtor + '->' + item.to"
-      class="flex items-center justify-between mb-2"
+      class="flex justify-between items-center"
     >
-      <span class="bg-green-500/20 text-green-200 border border-green-400/30 px-2 py-1 rounded text-xs">
+      <span class="bg-green-500/20 text-green-200 border border-green-400/30 px-2 py-1 rounded text-xs ml-4">
         {{ item.to }}
       </span>
       <span class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
