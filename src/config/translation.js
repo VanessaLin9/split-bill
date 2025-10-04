@@ -22,7 +22,8 @@ export const translations = {
       shouldPay: '應付',
       owes: '欠',
       yuan: '元',
-      pleaseSelectParticipants: '請選擇分帳成員'
+      pleaseSelectParticipants: '請選擇分帳成員',
+      restoreDefaults: '恢復預設'
     },
     en: {
       title: 'Friends Trip Bill Split',
@@ -46,6 +47,7 @@ export const translations = {
       perPerson: 'Per Person',
       shouldPay: 'Should Pay',
       owes: 'owes',
-      yuan: ''
+      yuan: '',
+      restoreDefaults: 'Restore Defaults'
     }
   }
