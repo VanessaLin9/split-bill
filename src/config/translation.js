@@ -1,6 +1,13 @@
 export const translations = {
     zh: {
       title: '朋友出遊分帳',
+      tagline: '聰明記帳，輕鬆分帳',
+      members: '成員',
+      finalSettlement: '最終結算',
+      allSettled: '已結清！',
+      tabMembers: '成員', tabAdd: '新增', tabExpenses: '明細', tabSettlement: '結算',
+      memberInUse: '無法刪除「{name}」，因為已經在記帳紀錄中出現過。',
+      invalidExpense: '請輸入有效金額並選擇付款人及分帳成員',
       memberManagement: '成員管理',
       addMember: '新增成員',
       memberName: '成員姓名',
@@ -29,6 +36,14 @@ export const translations = {
     },
     en: {
       title: 'Friends Trip Bill Split',
+      tagline: 'Smart expense tracking',
+      members: 'Members',
+      finalSettlement: 'Final Settlement',
+      allSettled: 'All settled!',
+      tabMembers: 'Members', tabAdd: 'Add', tabExpenses: 'Expenses', tabSettlement: 'Split',
+      memberInUse: 'Cannot remove {name} because they appear in an expense.',
+      invalidExpense: 'Enter a valid amount and select a payer and participants',
+      pleaseSelectParticipants: 'Please select participants',
       memberManagement: 'Member Management',
       addMember: 'Add Member',
       memberName: 'Member Name',

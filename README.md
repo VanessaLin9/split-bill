@@ -1,7 +1,7 @@
 # 💸 Split-Bill | 朋友出遊分帳工具
 
-A simple, elegant bill-splitting tool for friends' trips. No login required, no data storage, pure frontend - use it anywhere! ✨  
-一個簡單的朋友出遊分帳小工具，無需登入、不儲存資料，純前端、隨用即走 ✨
+A simple, elegant bill-splitting tool for friends' trips. No login required; trip data stays in your browser via localStorage. ✨
+一個簡單的朋友出遊分帳小工具，無需登入，旅程資料儲存在瀏覽器 localStorage，純前端、隨用即走 ✨
 
 👉 **[Live Demo | 線上體驗](https://vanessalin9.github.io/split-bill/)**
 
@@ -16,16 +16,16 @@ A simple, elegant bill-splitting tool for friends' trips. No login required, no 
   - 每筆花費可紀錄：金額、付款人、用途、分帳對象
 - ✅ **Smart Settlement | 智能結算**: Auto-calculate what each person owes with bidirectional offset
   - 自動計算每人應付款項，並支援雙向還款抵銷
-- ✅ **Clear Settlement Display | 清楚結帳顯示**: Grouped settlement results by payer
-  - 結帳結果依「付款人」分組表格清楚呈現
+- ✅ **Clear Settlement Display | 清楚結帳顯示**: Grouped settlement results by debtor
+  - 結帳結果依「欠款人」分組表格清楚呈現
 
 ### User Experience | 使用體驗
 - 🌐 **Bilingual Support | 雙語支援**: Chinese/English interface with language toggle
   - 中英文介面切換，支援語言按鈕
 - 📱 **Responsive Design | 響應式設計**: Mobile-first with desktop optimization
   - RWD 響應式介面：手機版在下方、桌機版右側
-- 💾 **Local Storage | 本地儲存**: Data persists in browser localStorage
-  - 資料儲存在瀏覽器本地，重新整理不遺失
+- 💾 **Local Storage | 本地儲存**: Trip data persists under `split-bill:v2` in browser localStorage
+  - 資料儲存在瀏覽器本地的 `split-bill:v2`，舊版資料會自動遷移且保留原始鍵值
 - 🔄 **Restore Defaults | 恢復預設**: One-click reset to default settings
   - 一鍵恢復預設設定，清除所有資料
 - 🚀 **Instant Deploy | 即時部署**: Available on GitHub Pages, ready to use
@@ -82,6 +82,9 @@ npm run dev
 
 # Preview build | 本地預覽
 npm run preview
+
+# Run unit tests | 執行單元測試
+npm test
 
 # Build for production | 編譯建置
 npm run build

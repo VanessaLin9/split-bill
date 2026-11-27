@@ -14,7 +14,7 @@
         <label class="block text-white/90 text-sm mb-2 text-left">{{ t('amount') }}</label>
         <input
           :value="amount"
-          @input="$emit('update:amount', Number(($event.target as HTMLInputElement).value))"
+          @input="$emit('update:amount', $event.target.value)"
           type="number"
           placeholder="0.00"
           class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-right text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/50"
@@ -25,11 +25,11 @@
         <label class="block text-white/90 text-sm mb-2 text-left">{{ t('payer') }}</label>
         <select
           :value="paidBy"
-          @change="$emit('update:paidBy', ($event.target as HTMLSelectElement).value)"
+          @change="$emit('update:paidBy', $event.target.value)"
           class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
         >
           <option disabled value="">{{ t('selectPayer') }}</option>
-          <option v-for="member in members" :key="member" :value="member" class="text-gray-900">{{ member }}</option>
+          <option v-for="member in members" :key="member.id" :value="member.id" class="text-gray-900">{{ member.name }}</option>
         </select>
       </div>
 
@@ -37,7 +37,7 @@
         <label class="block text-white/90 text-sm mb-2 text-left">{{ t('description') }}</label>
         <input
           :value="description"
-          @input="$emit('update:description', ($event.target as HTMLInputElement).value)"
+          @input="$emit('update:description', $event.target.value)"
           type="text"
           :placeholder="t('description')"
           class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
@@ -49,17 +49,17 @@
         <div class="space-y-2">
           <label
             v-for="member in members"
-            :key="member"
+            :key="member.id"
             class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer"
           >
             <input
               type="checkbox"
-              :value="member"
-              :checked="sharedWith.includes(member)"
-              @change="$emit('toggle-participant', member)"
+              :value="member.id"
+              :checked="sharedWith.includes(member.id)"
+              @change="$emit('toggle-participant', member.id)"
               class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 focus:ring-2"
             />
-            <span class="text-white">{{ member }}</span>
+            <span class="text-white">{{ member.name }}</span>
           </label>
         </div>
       </div>
@@ -77,23 +77,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-const props = defineProps<{
-  members: string[]
-  amount: number | ''
-  paidBy: string
-  description: string
-  sharedWith: string[]
-  t: (key: string) => string
-}>()
-
-defineEmits<{
-  (e: 'update:amount', val: number): void
-  (e: 'update:paidBy', val: string): void
-  (e: 'update:description', val: string): void
-  (e: 'toggle-participant', member: string): void
-  (e: 'submit'): void
-}>()
+<script setup>
+defineProps({ members: Array, amount: [Number, String], paidBy: String, description: String, sharedWith: Array, t: Function })
+defineEmits(['update:amount', 'update:paidBy', 'update:description', 'toggle-participant', 'submit'])
 </script>
-
-

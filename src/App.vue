@@ -24,7 +24,7 @@
               <h1 class="text-2xl bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent font-bold">
                 {{ t('title') }}
               </h1>
-              <p class="text-sm text-blue-200/70">Smart expense tracking</p>
+              <p class="text-sm text-blue-200/70">{{ t('tagline') }}</p>
             </div>
           </div>
           
@@ -101,11 +101,11 @@
       <div class="bg-white/10 backdrop-blur-xl border-b border-white/20 px-4 py-3">
         <div class="flex justify-between items-center">
           <div class="text-white">
-            <div class="text-sm text-white/70">Total Expenses</div>
+            <div class="text-sm text-white/70">{{ t('totalExpenses') }}</div>
             <div class="text-xl font-bold">${{ totalExpenses.toFixed(2) }}</div>
           </div>
           <div class="text-white text-right">
-            <div class="text-sm text-white/70">Members</div>
+            <div class="text-sm text-white/70">{{ t('members') }}</div>
             <div class="text-xl font-bold">{{ members.length }}</div>
           </div>
         </div>
@@ -125,8 +125,8 @@
                 : 'bg-transparent text-white/70'
             ]"
           >
-            <component :is="tab.icon" class="w-5 h-1" />
-            <span class="text-xs">{{ tab.label }}</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="tab.iconPath" /></svg>
+            <span class="text-xs">{{ t(tab.labelKey) }}</span>
           </button>
         </div>
       </div>
@@ -142,7 +142,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="(member) => removeMember(member)"
+            @remove-member="handleRemoveMember"
           />
 
           <!-- 新增花費頁 -->
@@ -170,6 +170,7 @@
             v-else-if="activeTab === 'expenses'"
             :expenses="expenses"
             :t="t"
+            :memberNames="memberNames"
             @remove="removeExpense"
           />
 
@@ -182,6 +183,7 @@
             :perPersonAverage="perPersonAverage"
             :expenseBreakdown="expenseBreakdown"
             :finalSettlements="finalSettlements"
+            :memberNames="memberNames"
             :t="t"
           />
         </div>
@@ -193,11 +195,11 @@
       <div class="bg-white/10 backdrop-blur-xl border-b border-white/20 px-4 py-3 lg:px-6 lg:py-4">
         <div class="flex justify-between items-center">
           <div class="text-white">
-            <div class="text-sm text-white/70">Total Expenses</div>
+            <div class="text-sm text-white/70">{{ t('totalExpenses') }}</div>
             <div class="text-xl font-bold">${{ totalExpenses.toFixed(2) }}</div>
           </div>
           <div class="text-white text-right">
-            <div class="text-sm text-white/70">Members</div>
+            <div class="text-sm text-white/70">{{ t('members') }}</div>
             <div class="text-xl font-bold">{{ members.length }}</div>
           </div>
         </div>
@@ -213,7 +215,7 @@
             :t="t"
             @update:newMember="val => (newMember = val)"
             @add-member="addMember"
-            @remove-member="(member) => removeMember(member)"
+            @remove-member="handleRemoveMember"
           />
         </div>
 
@@ -245,6 +247,7 @@
             :perPersonAverage="perPersonAverage"
             :expenseBreakdown="expenseBreakdown"
             :finalSettlements="finalSettlements"
+            :memberNames="memberNames"
             :t="t"
             leftAlign
           />
@@ -254,6 +257,7 @@
           <ExpensesPanel
             :expenses="expenses"
             :t="t"
+            :memberNames="memberNames"
             grid
             @remove="removeExpense"
           />
@@ -271,18 +275,22 @@ import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
 import { tabs } from './config/tabs'
 import { useLanguage } from './composable/useLanguage'
-import { useMembers } from './composable/useMembers'
-import { useExpenses } from './composable/useExpenses'
+import { useTrip } from './composable/useTrip'
+import { getTotal, getOwedBreakdown, getFinalSettlements } from './lib/settlement'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 語言相關（composable）
 const { language, t, toggleLanguage } = useLanguage()
 
-// 成員相關（composable）
-const { members, newMember, addMember, removeMember } = useMembers()
-
-// 花費相關（composable）
-const { expenses, addExpense: addNewExpense, removeExpense, clearExpenses } = useExpenses()
+const { members, expenses, addMember: addTripMember, removeMember, addExpense: addNewExpense, removeExpense, restoreDefaults } = useTrip()
+const newMember = ref('')
+const memberNames = computed(() => Object.fromEntries(members.value.map(member => [member.id, member.name])))
+const addMember = () => {
+  if (addTripMember(newMember.value)) newMember.value = ''
+}
+const handleRemoveMember = (member) => {
+  if (!removeMember(member.id)) alert(t('memberInUse').replace('{name}', member.name))
+}
 
 const newExpense = ref({
   amount: '',
@@ -294,101 +302,10 @@ const newExpense = ref({
 const isDesktop = ref(false)
 const activeTab = ref('members')
 
-// 計算屬性
-const totalExpenses = computed(() => {
-  return expenses.value.reduce((sum, expense) => sum + expense.amount, 0)
-})
-
-const perPersonAverage = computed(() => {
-  return members.value.length > 0 ? totalExpenses.value / members.value.length : 0
-})
-
-// 計算每人應付總額
-const expenseBreakdown = computed(() => {
-  const breakdown = {}
-  expenses.value.forEach(expense => {
-    const splitAmount = expense.amount / expense.sharedWith.length
-    expense.sharedWith.forEach(participant => {
-      breakdown[participant] = (breakdown[participant] || 0) + splitAmount
-    })
-  })
-  return breakdown
-})
-
-// 計算每人實際付款
-const payments = computed(() => {
-  const paymentMap = {}
-  expenses.value.forEach(expense => {
-    paymentMap[expense.paidBy] = (paymentMap[expense.paidBy] || 0) + expense.amount
-  })
-  return paymentMap
-})
-
-// 最終結算計算
-const finalSettlements = computed(() => {
-  // 1) 先累積 payer -> participant 的金額
-  const groups = {}
-  for (const expense of expenses.value) {
-    const shared = expense.sharedWith || []
-    if (shared.length === 0) continue // 避免除以 0
-
-    const splitAmount = expense.amount / shared.length
-    for (const participant of shared) {
-      if (participant === expense.paidBy) continue
-      const key = `${expense.paidBy}->${participant}`
-      groups[key] = (groups[key] || 0) + splitAmount
-    }
-  }
-
-  // 2) 將 A->B 與 B->A 互相沖銷，只留下同向的正餘額
-  const netGroups = {}
-  for (const key of Object.keys(groups)) {
-    const amount = groups[key]
-    if (amount <= 0) continue
-
-    const [a, b] = key.split('->')
-    const reverseKey = `${b}->${a}`
-
-    if (netGroups[reverseKey] != null) {
-      // 若已有反向金額，做淨額
-      const diff = netGroups[reverseKey] - amount
-      if (diff > 1e-9) {
-        // 反向還有剩，保留反向的正餘額
-        netGroups[reverseKey] = diff
-      } else if (diff < -1e-9) {
-        // 正向有剩，改存正向餘額
-        delete netGroups[reverseKey]
-        netGroups[key] = -diff
-      } else {
-        // 剛好抵銷為 0
-        delete netGroups[reverseKey]
-      }
-    } else {
-      // 沒有反向就累加到同 key 上
-      netGroups[key] = (netGroups[key] || 0) + amount
-    }
-  }
-
-  // 3) 輸出結果（四捨五入到分）
-  const final = []
-  for (const key of Object.keys(netGroups)) {
-    const raw = netGroups[key]
-    const amount = Math.round(raw * 100) / 100 // 兩位小數
-    if (amount <= 0) continue
-
-    const [paidBy, participant] = key.split('->')
-    final.push({ from: participant, to: paidBy, amount })
-  }
-  const groupedSettlements = final.reduce((acc, item) => {
-    if(!acc[item.from]) {
-      acc[item.from] = []
-    }
-    acc[item.from].push(item)
-    return acc
-  }, {})
-  return groupedSettlements
-})
-
+const totalExpenses = computed(() => getTotal(expenses.value))
+const perPersonAverage = computed(() => members.value.length ? totalExpenses.value / members.value.length : 0)
+const expenseBreakdown = computed(() => getOwedBreakdown(expenses.value))
+const finalSettlements = computed(() => getFinalSettlements(expenses.value))
 
 // 響應式檢測
 const checkScreenSize = () => {
@@ -413,7 +330,7 @@ const submitNewExpense = () => {
     sharedWith: newExpense.value.sharedWith,
   })
   if (!ok) {
-    alert(t('pleaseSelectParticipants'))
+    alert(t(newExpense.value.sharedWith.length ? 'invalidExpense' : 'pleaseSelectParticipants'))
     return
   }
   newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
@@ -422,17 +339,8 @@ const submitNewExpense = () => {
 // 恢復預設設定
 const restoreDefaultSettings = () => {
   if (confirm(t('confirmRestore'))) {
-    // 恢復預設成員
-    members.value = ['企鵝', '熊熊', '查德']
-    localStorage.setItem('members', JSON.stringify(members.value))
-    
-    // 清除所有消費記錄
-    clearExpenses()
-    
-    // 重置新成員輸入框
+    restoreDefaults()
     newMember.value = ''
-    
-    // 重置新消費表單
     newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [] }
     
     alert(t('restoreSuccess'))

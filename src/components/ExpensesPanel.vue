@@ -16,7 +16,7 @@
     <div v-else :class="grid ? 'grid grid-cols-3 gap-x-2 gap-y-3 items-stretch' : 'space-y-3'">
       <div
         v-for="(expense, index) in expenses"
-        :key="index"
+        :key="expense.id"
         class="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-all"
       >
         <div class="flex justify-between items-start mb-2">
@@ -27,7 +27,7 @@
             </span>
           </div>
           <button
-            @click="$emit('remove', index)"
+            @click="$emit('remove', expense.id)"
             class="text-red-400 hover:text-red-300 p-1"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
 
         <div class="text-sm text-white/70 mb-3">
           {{ t('paidBy') }}: 
-          <span class="text-blue-300">{{ expense.paidBy }}</span>
+          <span class="text-blue-300">{{ memberNames[expense.paidBy] || expense.paidBy }}</span>
         </div>
 
         <div>
@@ -53,7 +53,7 @@
               :key="participant"
               class="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs"
             >
-              {{ participant }}
+              {{ memberNames[participant] || participant }}
             </span>
           </div>
         </div>
@@ -62,7 +62,7 @@
           <div class="text-xs text-white/50 mb-1">{{ t('split') }}:</div>
           <div class="text-xs text-white/70">
             <span v-for="person in expense.sharedWith" :key="person">
-              {{ person }} → {{ expense.paidBy }}: ${{ (expense.amount / expense.sharedWith.length).toFixed(2) }}{{ t('yuan') }}
+              {{ memberNames[person] || person }} → {{ memberNames[expense.paidBy] || expense.paidBy }}: ${{ (expense.amount / expense.sharedWith.length).toFixed(2) }}{{ t('yuan') }}
               <br />
             </span>
           </div>
@@ -72,23 +72,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-type Expense = {
-  amount: number
-  paidBy: string
-  description: string
-  sharedWith: string[]
-}
-
-const props = defineProps<{
-  expenses: Expense[]
-  t: (key: string) => string
-  grid?: boolean
-}>()
-
-defineEmits<{
-  (e: 'remove', index: number): void
-}>()
+<script setup>
+defineProps({ expenses: Array, memberNames: Object, t: Function, grid: Boolean })
+defineEmits(['remove'])
 </script>
-
-
