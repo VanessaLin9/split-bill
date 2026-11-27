@@ -12,7 +12,7 @@
     <div class="flex gap-2 mb-4">
       <input
         :value="newMember"
-        @input="$emit('update:newMember', ($event.target as HTMLInputElement).value)"
+        @input="$emit('update:newMember', $event.target.value)"
         type="text"
         :placeholder="t('memberName')"
         class="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -31,10 +31,10 @@
     <div class="space-y-2">
       <div
         v-for="member in members"
-        :key="member"
+        :key="member.id"
         class="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2 border border-white/10"
       >
-        <span class="text-white">{{ member }}</span>
+        <span class="text-white">{{ member.name }}</span>
         <button
           @click="$emit('remove-member', member)"
           class="text-red-400 hover:text-red-300 p-1"
@@ -48,18 +48,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-const props = defineProps<{
-  members: string[]
-  newMember: string
-  t: (key: string) => string
-}>()
-
-defineEmits<{
-  (e: 'update:newMember', val: string): void
-  (e: 'add-member'): void
-  (e: 'remove-member', member: string): void
-}>()
+<script setup>
+defineProps({ members: Array, newMember: String, t: Function })
+defineEmits(['update:newMember', 'add-member', 'remove-member'])
 </script>
-
-

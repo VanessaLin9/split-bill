@@ -40,21 +40,21 @@
         <div class="space-y-2">
           <div
             v-for="member in members"
-            :key="member"
+            :key="member.id"
             class="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/10"
           >
             <span class="bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 px-2 py-1 rounded text-sm">
-              {{ member }}
+              {{ member.name }}
             </span>
-            <span class="text-white font-medium text-sm">${{ (expenseBreakdown[member] || 0).toFixed(2) }}{{ t('yuan') }}</span>
+            <span class="text-white font-medium text-sm">${{ (expenseBreakdown[member.id] || 0).toFixed(2) }}{{ t('yuan') }}</span>
           </div>
         </div>
       </div>
 
       <div class="border-t border-white/20 pt-4">
-        <h4 class="text-white/90 font-medium mb-3">Final Settlement</h4>
-        <div v-if="finalSettlements.length === 0" class="text-center py-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg border border-green-400/30">
-          <div class="text-green-300 font-medium text-sm">All settled!</div>
+        <h4 class="text-white/90 font-medium mb-3">{{ t('finalSettlement') }}</h4>
+        <div v-if="Object.keys(finalSettlements).length === 0" class="text-center py-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg border border-green-400/30">
+          <div class="text-green-300 font-medium text-sm">{{ t('allSettled') }}</div>
         </div>
 
         <div
@@ -65,7 +65,7 @@
   <!-- 欠款人標頭列 -->
   <div class="flex items-center justify-between gap-2 px-2 py-1 w-2/5 bg-blue-500/20 text-blue-200 border border-blue-400/30 rounded">
     <span class="text-xs text-white">
-      {{ debtor }}
+      {{ memberNames[debtor] || debtor }}
     </span>
     <span class="text-white/30 text-xs">{{ t('owes') }}</span>
   </div>
@@ -78,7 +78,7 @@
       class="flex justify-between items-center"
     >
       <span class="bg-green-500/20 text-green-200 border border-green-400/30 px-2 py-1 rounded text-xs ml-4">
-        {{ item.to }}
+        {{ memberNames[item.to] || item.to }}
       </span>
       <span class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
         ${{ item.amount.toFixed(2) }}{{ t('yuan') }}
@@ -93,24 +93,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-type Expense = {
-  amount: number
-  paidBy: string
-  description: string
-  sharedWith: string[]
-}
-
-const props = defineProps<{
-  members: string[]
-  expenses: Expense[]
-  totalExpenses: number
-  perPersonAverage: number
-  expenseBreakdown: Record<string, number>
-  finalSettlements: { participant: { from: string; to: string; amount: number }[] }
-  t: (key: string) => string
-  leftAlign?: boolean
-}>()
+<script setup>
+defineProps({ members: Array, expenses: Array, totalExpenses: Number, perPersonAverage: Number,
+  expenseBreakdown: Object, finalSettlements: Object, memberNames: Object, t: Function, leftAlign: Boolean })
 </script>
-
-
