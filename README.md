@@ -19,13 +19,18 @@ A simple, elegant bill-splitting tool for friends' trips. No login required; tri
 - ✅ **Clear Settlement Display | 清楚結帳顯示**: Grouped settlement results by debtor
   - 結帳結果依「欠款人」分組表格清楚呈現
 
+### Multi-currency | 多幣別
+- Record expenses in TWD, KRW, USD, JPY, or EUR with a rate snapshot on each expense. Settlement uses the trip's base currency and can be displayed in any enabled currency with a rate.
+- Official reference rates come from Frankfurter v2, with currency-api (jsDelivr, then pages.dev) as fallback. Enter an actual exchange amount or direct manual rate to use your group's rate. Updating the trip rate leaves past expenses unchanged unless you explicitly apply it to them.
+- Trip data uses `split-bill:v3` in localStorage. Older v2 and legacy keys are preserved during migration; a damaged v3 value is backed up to `split-bill:v3:backup`.
+
 ### User Experience | 使用體驗
 - 🌐 **Bilingual Support | 雙語支援**: Chinese/English interface with language toggle
   - 中英文介面切換，支援語言按鈕
 - 📱 **Responsive Design | 響應式設計**: Mobile-first with desktop optimization
   - RWD 響應式介面：手機版在下方、桌機版右側
-- 💾 **Local Storage | 本地儲存**: Trip data persists under `split-bill:v2` in browser localStorage
-  - 資料儲存在瀏覽器本地的 `split-bill:v2`，舊版資料會自動遷移且保留原始鍵值
+- 💾 **Local Storage | 本地儲存**: Trip data persists under `split-bill:v3` in browser localStorage
+  - 資料儲存在瀏覽器本地的 `split-bill:v3`，舊版資料會自動遷移且保留原始鍵值
 - 🔄 **Restore Defaults | 恢復預設**: One-click reset to default settings
   - 一鍵恢復預設設定，清除所有資料
 - 🚀 **Instant Deploy | 即時部署**: Available on GitHub Pages, ready to use

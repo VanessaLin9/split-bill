@@ -16,11 +16,24 @@
           :value="amount"
           @input="$emit('update:amount', $event.target.value)"
           type="number"
-          placeholder="0.00"
+          :step="CURRENCIES[currency] === 0 ? 1 : 0.01" min="0"
+          placeholder="0"
           class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/50 text-right text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/50"
         />
       </div>
 
+      <div class="space-y-2">
+        <label class="block text-white/90 text-sm text-left">{{ t('currency') }}</label>
+        <select :value="currency" @change="$emit('update:currency', $event.target.value)" class="w-full bg-slate-800 border border-white/20 rounded-lg px-3 py-2 text-white">
+          <option v-for="code in trip.currencies" :key="code">{{ code }}</option>
+        </select>
+        <template v-if="currency !== trip.baseCurrency">
+          <label class="block text-white/90 text-sm">{{ t('expenseOverride') }}</label>
+          <input :value="overrideRate" @input="$emit('update:overrideRate', $event.target.value)" type="number" step="any" min="0" :placeholder="t('optionalRate')" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white" />
+        </template>
+        <p v-if="rate && Number(amount) > 0" class="text-sm text-blue-200">≈ {{ formatMoney(Number(amount) * rate, trip.baseCurrency) }}</p>
+        <p v-if="!rate" class="text-sm text-amber-200">{{ t('noRateForExpense') }}</p>
+      </div>
       <div>
         <label class="block text-white/90 text-sm mb-2 text-left">{{ t('payer') }}</label>
         <select
@@ -78,6 +91,10 @@
 </template>
 
 <script setup>
-defineProps({ members: Array, amount: [Number, String], paidBy: String, description: String, sharedWith: Array, t: Function })
-defineEmits(['update:amount', 'update:paidBy', 'update:description', 'toggle-participant', 'submit'])
+import { computed } from 'vue'
+import { formatMoney } from '../lib/money'
+import { CURRENCIES } from '../config/currencies'
+const props = defineProps({ members: Array, amount: [Number, String], paidBy: String, description: String, sharedWith: Array, currency: String, overrideRate: [String, Number], trip: Object, t: Function })
+const rate = computed(() => props.currency === props.trip.baseCurrency ? 1 : props.overrideRate !== '' && props.overrideRate != null ? Number(props.overrideRate) : props.trip.fxRates[props.currency]?.rate)
+defineEmits(['update:amount', 'update:paidBy', 'update:description', 'update:currency', 'update:overrideRate', 'toggle-participant', 'submit'])
 </script>
