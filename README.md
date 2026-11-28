@@ -20,8 +20,10 @@ A simple, elegant bill-splitting tool for friends' trips. No login required; tri
   - 結帳結果依「欠款人」分組表格清楚呈現
 
 ### Multi-currency | 多幣別
-- Record expenses in TWD, KRW, USD, JPY, or EUR with a rate snapshot on each expense. Settlement uses the trip's base currency and can be displayed in any enabled currency with a rate.
-- Official reference rates come from Frankfurter v2, with currency-api (jsDelivr, then pages.dev) as fallback. Enter an actual exchange amount or direct manual rate to use your group's rate. Updating the trip rate leaves past expenses unchanged unless you explicitly apply it to them.
+- Record expenses in TWD, KRW, USD, JPY, or EUR with a rate snapshot on each expense. The picker remembers the last currency used. Records show the entered currency, with a small approximate TWD line for non-TWD expenses; split details stay in the entered currency. Settlement defaults to TWD and can be displayed in any supported currency with an official rate.
+- Official rates only: Frankfurter v2 is primary, with currency-api (jsDelivr, then pages.dev) as fallback and a 5-second timeout per provider. Rates load automatically using a daily localStorage cache (`split-bill:fx-cache`); a compact reference line shows rates, dates, and a refresh control. If all providers fail, cached rates remain available. Without an official rate, foreign expenses cannot be saved; rates never default to 1:1. Refreshing rates never rewrites saved expense snapshots.
+- 僅使用官方參考匯率，新增花費時選擇幣別並記住上次選擇。外幣記錄下方顯示約略台幣，更新匯率不會改動已儲存的換算金額；缺少官方匯率時無法新增外幣花費。
+- TWD / KRW / JPY use whole units; USD / EUR use two decimal places.
 - Trip data uses `split-bill:v3` in localStorage. Older v2 and legacy keys are preserved during migration; a damaged v3 value is backed up to `split-bill:v3:backup`.
 
 ### User Experience | 使用體驗
@@ -127,7 +129,7 @@ npm run deploy
 
 ### Recording Expenses | 記錄消費
 1. Switch to Add Expense tab/panel
-2. Fill in amount, select payer
+2. Fill in amount, choose currency, and select payer
 3. Choose description and participants
 4. Click "Add Expense"
 

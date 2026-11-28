@@ -25,14 +25,9 @@
       <div class="space-y-2">
         <label class="block text-white/90 text-sm text-left">{{ t('currency') }}</label>
         <select :value="currency" @change="$emit('update:currency', $event.target.value)" class="w-full bg-slate-800 border border-white/20 rounded-lg px-3 py-2 text-white">
-          <option v-for="code in trip.currencies" :key="code">{{ code }}</option>
+          <option v-for="code in SUPPORTED_CURRENCIES" :key="code">{{ code }}</option>
         </select>
-        <template v-if="currency !== trip.baseCurrency">
-          <label class="block text-white/90 text-sm">{{ t('expenseOverride') }}</label>
-          <input :value="overrideRate" @input="$emit('update:overrideRate', $event.target.value)" type="number" step="any" min="0" :placeholder="t('optionalRate')" class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white" />
-        </template>
-        <p v-if="rate && Number(amount) > 0" class="text-sm text-blue-200">≈ {{ formatMoney(Number(amount) * rate, trip.baseCurrency) }}</p>
-        <p v-if="!rate" class="text-sm text-amber-200">{{ t('noRateForExpense') }}</p>
+        <p v-if="rate === null" role="alert" class="text-sm text-amber-200">{{ t('noRateForExpense') }}</p>
       </div>
       <div>
         <label class="block text-white/90 text-sm mb-2 text-left">{{ t('payer') }}</label>
@@ -79,7 +74,8 @@
 
       <button
         @click="$emit('submit')"
-        class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center gap-2"
+        :disabled="rate === null"
+        class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -92,9 +88,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { formatMoney } from '../lib/money'
-import { CURRENCIES } from '../config/currencies'
-const props = defineProps({ members: Array, amount: [Number, String], paidBy: String, description: String, sharedWith: Array, currency: String, overrideRate: [String, Number], trip: Object, t: Function })
-const rate = computed(() => props.currency === props.trip.baseCurrency ? 1 : props.overrideRate !== '' && props.overrideRate != null ? Number(props.overrideRate) : props.trip.fxRates[props.currency]?.rate)
-defineEmits(['update:amount', 'update:paidBy', 'update:description', 'update:currency', 'update:overrideRate', 'toggle-participant', 'submit'])
+import { getOfficialRate } from '../lib/fx'
+import { CURRENCIES, SUPPORTED_CURRENCIES } from '../config/currencies'
+const props = defineProps({ members: Array, amount: [Number, String], paidBy: String, description: String, sharedWith: Array, currency: String, trip: Object, t: Function })
+const rate = computed(() => getOfficialRate(props.currency, props.trip))
+defineEmits(['update:amount', 'update:paidBy', 'update:description', 'update:currency', 'toggle-participant', 'submit'])
 </script>

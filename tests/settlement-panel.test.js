@@ -5,7 +5,7 @@ import SettlementPanel from '../src/components/SettlementPanel.vue'
 import { formatMoney } from '../src/lib/money'
 import { getTotal, getOwedBreakdown, getFinalSettlements } from '../src/lib/settlement'
 
-async function renderPanel(displayCurrency, fxRates = { KRW: { rate: 0.024 }, USD: { rate: 32 } }) {
+async function renderPanel(displayCurrency, fxRates = { KRW: { rate: 0.024, source: 'official' }, USD: { rate: 32, source: 'official' } }) {
   const members = ['a', 'b', 'c'].map(id => ({ id, name: id }))
   const expenses = [{ amount: 2, amountInBase: 2, currency: 'TWD', paidBy: 'a', sharedWith: ['a', 'b', 'c'] }]
   return renderToString(createSSRApp(SettlementPanel, {

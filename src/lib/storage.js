@@ -1,4 +1,4 @@
-import { CURRENCIES, DEFAULT_CURRENCIES } from '../config/currencies'
+import { CURRENCIES, SUPPORTED_CURRENCIES } from '../config/currencies'
 
 export const STORAGE_KEY = 'split-bill:v3'
 export const BACKUP_KEY = 'split-bill:v3:backup'
@@ -22,7 +22,7 @@ export function defaultTrip() {
     trip: {
       id: makeId(), name: '',
       members: DEFAULT_MEMBER_NAMES.map(name => ({ id: makeId(), name })),
-      expenses: [], baseCurrency: 'TWD', currencies: [...DEFAULT_CURRENCIES], fxRates: {}, createdAt: now, updatedAt: now,
+      expenses: [], baseCurrency: 'TWD', currencies: [...SUPPORTED_CURRENCIES], fxRates: {}, createdAt: now, updatedAt: now,
     },
   }
 }
@@ -111,7 +111,7 @@ export function migrateLegacy(membersValue, expensesValue) {
 export function migrateV2(data) {
   const clean = sanitizeV2(data)
   return { ...clean, schemaVersion: 3, trip: { ...clean.trip,
-    baseCurrency: 'TWD', currencies: [...DEFAULT_CURRENCIES], fxRates: {},
+    baseCurrency: 'TWD', currencies: [...SUPPORTED_CURRENCIES], fxRates: {},
     expenses: clean.trip.expenses.map(expense => ({ ...expense, currency: 'TWD', fxRate: 1,
       fxSource: 'base', amountInBase: expense.amount })),
   } }
@@ -121,25 +121,26 @@ export function sanitizeV3(data) {
   const trip = data.trip || {}
   const baseCurrency = trip.baseCurrency in CURRENCIES ? trip.baseCurrency : 'TWD'
   const old = sanitizeV2(data)
-  const used = old.trip.expenses.map(e => e.currency).filter(code => code in CURRENCIES)
-  const currencies = [...new Set([baseCurrency, ...(Array.isArray(trip.currencies) ? trip.currencies : DEFAULT_CURRENCIES), ...used])]
-    .filter(code => code in CURRENCIES)
+  const currencies = [...SUPPORTED_CURRENCIES]
   const fxRates = {}
   for (const [code, entry] of Object.entries(trip.fxRates || {})) {
     if (code === baseCurrency || !(code in CURRENCIES) || !entry ||
-      !Number.isFinite(entry.rate) || entry.rate <= 0 || !['official', 'manual'].includes(entry.source)) continue
+      !Number.isFinite(entry.rate) || entry.rate <= 0 || entry.source !== 'official') continue
     fxRates[code] = { rate: entry.rate, source: entry.source,
       updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : old.trip.updatedAt,
       ...(typeof entry.officialDate === 'string' ? { officialDate: entry.officialDate } : {}) }
   }
   const expenses = old.trip.expenses.flatMap(expense => {
     const currency = expense.currency in CURRENCIES ? expense.currency : baseCurrency
-    const fxRate = currency === baseCurrency ? 1 : Number(expense.fxRate)
+    const fxRate = Number(expense.fxRate ?? (currency === baseCurrency ? 1 : NaN))
     if (!Number.isFinite(fxRate) || fxRate <= 0) return []
-    const fxSource = currency === baseCurrency ? 'base' :
-      ['official', 'manual', 'override'].includes(expense.fxSource) ? expense.fxSource : 'manual'
+    const fxSource = ['base', 'official', 'manual', 'override'].includes(expense.fxSource)
+      ? expense.fxSource : currency === baseCurrency ? 'base' : 'manual'
+    // Preserve historical snapshots, including amounts saved with a custom rate.
+    const amountInBase = Number.isFinite(expense.amountInBase) && expense.amountInBase > 0
+      ? expense.amountInBase : Number((expense.amount * fxRate).toPrecision(10))
     return [{ ...expense, currency, fxRate, fxSource,
-      amountInBase: Number((expense.amount * fxRate).toPrecision(10)) }]
+      amountInBase }]
   })
   return { ...old, schemaVersion: 3, trip: { ...old.trip, baseCurrency, currencies, fxRates, expenses } }
 }

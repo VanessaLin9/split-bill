@@ -1,4 +1,5 @@
 import { CURRENCIES } from '../config/currencies'
+import { getOfficialRate } from './fx'
 
 export function roundToCurrency(amount, code) {
   const factor = 10 ** CURRENCIES[code]
@@ -41,6 +42,6 @@ export function roundShares(amounts, code) {
 }
 
 export function toDisplay(amountInBase, code, trip) {
-  const rate = code === trip.baseCurrency ? 1 : trip.fxRates[code]?.rate
-  return Number.isFinite(rate) && rate > 0 ? amountInBase / rate : null
+  const rate = getOfficialRate(code, trip)
+  return rate === null ? null : amountInBase / rate
 }

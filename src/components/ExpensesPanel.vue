@@ -36,7 +36,9 @@
           </button>
         </div>
 
-        <p class="text-xs text-blue-200 mb-2">≈ {{ formatMoney(expense.amountInBase, trip.baseCurrency) }} · 1 {{ expense.currency }} = {{ expense.fxRate.toPrecision(6) }} {{ trip.baseCurrency }} ({{ t(expense.fxSource) }})</p>
+        <p v-if="expense.currency !== 'TWD'" class="text-xs text-blue-200 mb-2">
+          {{ approximateTwd(expense) }}
+        </p>
         <div class="text-white font-medium mb-2">
           {{ expense.description || t('untitled') }}
         </div>
@@ -74,7 +76,12 @@
 </template>
 
 <script setup>
-import { formatMoney, splitAmount } from '../lib/money'
-defineProps({ expenses: Array, memberNames: Object, trip: Object, t: Function, grid: Boolean })
+import { formatMoney, splitAmount, toDisplay } from '../lib/money'
+const props = defineProps({ expenses: Array, memberNames: Object, trip: Object, t: Function, grid: Boolean })
+const approximateTwd = expense => {
+  const amount = toDisplay(expense.amountInBase, 'TWD', props.trip)
+  return amount === null ? props.t('approximateTwdUnavailable') :
+    props.t('approximateAmount').replace('{amount}', formatMoney(amount, 'TWD'))
+}
 defineEmits(['remove'])
 </script>

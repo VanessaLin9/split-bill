@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { deriveActualRate, fetchOfficialRates, FX_CACHE_KEY } from '../src/lib/fx'
+import { fetchOfficialRates, FX_CACHE_KEY } from '../src/lib/fx'
 const date = new Date('2026-11-27T12:00:00Z')
 const storage = () => { const map = new Map(); return { getItem: key => map.get(key) || null, setItem: (key, value) => map.set(key, value) } }
 const response = json => ({ ok: true, json: async () => json })
@@ -38,8 +38,5 @@ describe('official rates', () => {
     const fetcher = vi.fn().mockResolvedValue(response([{ base: 'TWD', quote: 'KRW', rate: 0 }]))
     await expect(fetchOfficialRates('TWD', { fetcher, storage: storage(), now: date })).rejects.toThrow()
     expect(fetcher).toHaveBeenCalledTimes(3)
-  })
-  it('derives actual exchange rate', () => {
-    expect(deriveActualRate(10000, 430000)).toBeCloseTo(10000 / 430000)
   })
 })

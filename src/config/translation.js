@@ -32,7 +32,17 @@ export const translations = {
       pleaseSelectParticipants: '請選擇分帳成員',
       restoreDefaults: '恢復預設',
       confirmRestore: '確定要恢復預設設定嗎？這將清除所有成員和消費記錄。',
-      tabCurrency: '匯率', currencyPanel: '幣別 / 匯率', baseCurrency: '基準幣別', baseLocked: '已有消費記錄，無法更改基準幣別。', enabledCurrencies: '啟用幣別', currencyInUse: '基準幣別與已使用的幣別無法停用。', currency: '幣別', expenseOverride: '此筆消費自訂匯率', optionalRate: '選填：1 外幣 = 幾基準幣', noRateForExpense: '此幣別尚無匯率。請到「匯率」頁手動輸入，或在此筆消費輸入自訂匯率。', directRate: '直接輸入匯率', actualExchange: '實際換匯', saveRate: '儲存', invalidRate: '請輸入有效的正數匯率或換匯金額。', refreshRates: '更新官方匯率', loadingRates: '正在取得匯率…', ratesLoaded: '已載入 {provider} 參考匯率（{date}）。', staleRates: '服務暫時無法使用，使用 {date} 的快取匯率。', ratesUnavailable: '無法取得官方匯率，且沒有快取。請手動輸入匯率。', referenceRates: '官方匯率僅供參考，來源：Frankfurter / currency-api；實際換匯請輸入手動匯率。', updatedAt: '更新', officialDate: '官方日期', missingRate: '缺少匯率', stale: '過期快取', official: '官方', manual: '手動', base: '基準', override: '此筆自訂', displayCurrency: '顯示幣別', applyRates: '將目前匯率套用至既有消費', confirmApplyRates: '確定更新既有消費的匯率快照嗎？此筆自訂匯率不會更動。', confirmManualOverwrite: '以下手動匯率會被官方匯率覆蓋：{currencies}。確定嗎？',
+      currency: '幣別',
+      noRateForExpense: '此幣別尚無官方匯率，暫時無法新增花費。請連線後更新官方匯率。',
+      refreshRates: '更新匯率',
+      loadingRates: '正在取得匯率…',
+      staleRates: '匯率服務暫時無法使用，目前使用上列日期的快取匯率。',
+      ratesUnavailable: '無法取得官方匯率，且沒有快取。請連線後重試。',
+      referenceRates: '官方匯率僅供參考',
+      updatedAt: '更新日期',
+      displayCurrency: '顯示幣別',
+      approximateAmount: '約 {amount}',
+      approximateTwdUnavailable: '暫無官方匯率可估算台幣金額',
       restoreSuccess: '已恢復預設設定！'
     },
     en: {
@@ -68,7 +78,17 @@ export const translations = {
       yuan: '',
       restoreDefaults: 'Restore Defaults',
       confirmRestore: 'Are you sure you want to restore default settings? This will clear all members and expense records.',
-      tabCurrency: 'Rates', currencyPanel: 'Currency / Rates', baseCurrency: 'Base currency', baseLocked: 'Base currency cannot change after expenses are recorded.', enabledCurrencies: 'Enabled currencies', currencyInUse: 'The base and currencies used by expenses cannot be disabled.', currency: 'Currency', expenseOverride: 'Custom rate for this expense', optionalRate: 'Optional: base units per 1 foreign unit', noRateForExpense: 'No rate for this currency. Enter a manual rate in Rates or a custom rate for this expense.', directRate: 'Enter rate directly', actualExchange: 'Actual exchange', saveRate: 'Save', invalidRate: 'Enter a valid positive rate or exchange amounts.', refreshRates: 'Refresh official rates', loadingRates: 'Loading rates…', ratesLoaded: 'Loaded {provider} reference rates ({date}).', staleRates: 'Providers unavailable; using cached rates from {date}.', ratesUnavailable: 'Official rates unavailable and no cache exists. Enter a manual rate.', referenceRates: 'Official rates are reference rates from Frankfurter / currency-api. Enter your actual exchange rate manually.', updatedAt: 'Updated', officialDate: 'Official date', missingRate: 'No rate', stale: 'Stale cache', official: 'Official', manual: 'Manual', base: 'Base', override: 'Override', displayCurrency: 'Display currency', applyRates: 'Apply current rates to existing expenses', confirmApplyRates: 'Update existing expense rate snapshots? Expense overrides will stay unchanged.', confirmManualOverwrite: 'Overwrite these manual rates with official rates: {currencies}?',
+      currency: 'Currency',
+      noRateForExpense: 'No official rate for this currency. Connect and refresh official rates before adding this expense.',
+      refreshRates: 'Refresh rates',
+      loadingRates: 'Loading rates…',
+      staleRates: 'Rate providers are unavailable; using cached rates from the date shown above.',
+      ratesUnavailable: 'Official rates are unavailable and no cache exists. Connect and try again.',
+      referenceRates: 'Official rates are for reference only',
+      updatedAt: 'Updated',
+      displayCurrency: 'Display currency',
+      approximateAmount: 'approx. {amount}',
+      approximateTwdUnavailable: 'Official rate unavailable to estimate TWD',
       restoreSuccess: 'Default settings restored!'
     }
   }
