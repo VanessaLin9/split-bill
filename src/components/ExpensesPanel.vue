@@ -62,8 +62,8 @@
         <div class="mt-3 pt-3 border-t border-white/10">
           <div class="text-xs text-white/50 mb-1">{{ t('split') }}:</div>
           <div class="text-xs text-white/70">
-            <span v-for="(person, index) in expense.sharedWith" :key="person">
-              {{ memberNames[person] || person }} → {{ memberNames[expense.paidBy] || expense.paidBy }}: {{ formatMoney(splitAmount(expense.amount, expense.sharedWith.length, expense.currency)[index], expense.currency) }}
+            <span v-for="(person, personIndex) in expense.sharedWith" :key="person">
+              {{ memberNames[person] || person }} → {{ memberNames[expense.paidBy] || expense.paidBy }}: {{ formatMoney(splitAmount(expense.amount, expense.sharedWith.length, expense.currency)[personIndex], expense.currency) }}
               <br />
             </span>
           </div>

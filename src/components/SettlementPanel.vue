@@ -11,7 +11,7 @@
 
     <div class="mb-3">
       <label class="text-sm text-white/80 mr-2">{{ t('displayCurrency') }}</label>
-      <select :value="displayCurrency" @change="$emit('update:displayCurrency', $event.target.value)" class="bg-slate-800 border border-white/20 text-white rounded px-2 py-1">
+      <select :value="effectiveDisplayCurrency" @change="$emit('update:displayCurrency', $event.target.value)" class="bg-slate-800 border border-white/20 text-white rounded px-2 py-1">
         <option v-for="code in trip.currencies" :key="code" :disabled="code !== trip.baseCurrency && !trip.fxRates[code]?.rate">{{ code }}</option>
       </select>
     </div>
@@ -37,14 +37,14 @@
         <h4 class="text-white/90 font-medium mb-3" :class="leftAlign ? 'text-left' : ''">{{ t('shouldPay') }}</h4>
         <div class="space-y-2">
           <div
-            v-for="member in members"
+            v-for="(member, memberIndex) in members"
             :key="member.id"
             class="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-white/10"
           >
             <span class="bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 px-2 py-1 rounded text-sm">
               {{ member.name }}
             </span>
-            <span class="text-white font-medium text-sm">{{ money(expenseBreakdown[member.id] || 0) }}</span>
+            <span class="text-white font-medium text-sm">{{ formatMoney(shouldPay[memberIndex], effectiveDisplayCurrency) }}</span>
           </div>
         </div>
       </div>
@@ -92,9 +92,14 @@
 </template>
 
 <script setup>
-import { formatMoney, toDisplay } from '../lib/money'
+import { computed } from 'vue'
+import { formatMoney, roundShares, toDisplay } from '../lib/money'
 const props = defineProps({ members: Array, expenses: Array, totalExpenses: Number, perPersonAverage: Number,
   expenseBreakdown: Object, finalSettlements: Object, memberNames: Object, trip: Object, displayCurrency: String, t: Function, leftAlign: Boolean })
 defineEmits(['update:displayCurrency'])
-const money = amount => formatMoney(toDisplay(amount, props.displayCurrency, props.trip), props.displayCurrency)
+const effectiveDisplayCurrency = computed(() =>
+  toDisplay(0, props.displayCurrency, props.trip) === null ? props.trip.baseCurrency : props.displayCurrency)
+const shouldPay = computed(() => roundShares(props.members.map(member =>
+  toDisplay(props.expenseBreakdown[member.id] || 0, effectiveDisplayCurrency.value, props.trip)), effectiveDisplayCurrency.value))
+const money = amount => formatMoney(toDisplay(amount, effectiveDisplayCurrency.value, props.trip), effectiveDisplayCurrency.value)
 </script>

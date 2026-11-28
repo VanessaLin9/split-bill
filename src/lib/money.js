@@ -22,6 +22,24 @@ export function splitAmount(amount, n, code) {
   return Array.from({ length: n }, (_, i) => (each + (i < remainder ? 1 : 0)) / factor)
 }
 
+// Amounts must already be in the display currency. Allocate whole minor units
+// so the shares add up to the total rounded once, with input order breaking ties.
+export function roundShares(amounts, code) {
+  if (!(code in CURRENCIES) || !Array.isArray(amounts) ||
+    amounts.some(amount => !Number.isFinite(amount) || amount < 0)) throw new Error('Invalid shares')
+  const factor = 10 ** CURRENCIES[code]
+  const shares = amounts.map((amount, index) => {
+    const scaled = amount * factor
+    const units = Math.floor(scaled)
+    return { index, units, remainder: scaled - units }
+  })
+  const totalUnits = Math.round(roundToCurrency(amounts.reduce((sum, amount) => sum + amount, 0), code) * factor)
+  const remainder = totalUnits - shares.reduce((sum, share) => sum + share.units, 0)
+  const ranked = [...shares].sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+  for (const share of ranked.slice(0, remainder)) share.units += 1
+  return shares.map(share => share.units / factor)
+}
+
 export function toDisplay(amountInBase, code, trip) {
   const rate = code === trip.baseCurrency ? 1 : trip.fxRates[code]?.rate
   return Number.isFinite(rate) && rate > 0 ? amountInBase / rate : null
