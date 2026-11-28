@@ -1,5 +1,9 @@
-export const STORAGE_KEY = 'split-bill:v2'
-export const BACKUP_KEY = 'split-bill:v2:backup'
+import { CURRENCIES, DEFAULT_CURRENCIES } from '../config/currencies'
+
+export const STORAGE_KEY = 'split-bill:v3'
+export const BACKUP_KEY = 'split-bill:v3:backup'
+export const V2_KEY = 'split-bill:v2'
+export const V2_BACKUP_KEY = 'split-bill:v2:backup'
 export const DEFAULT_MEMBER_NAMES = ['企鵝', '熊熊', '查德']
 
 export function makeId() {
@@ -14,11 +18,11 @@ export function makeId() {
 export function defaultTrip() {
   const now = new Date().toISOString()
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     trip: {
       id: makeId(), name: '',
       members: DEFAULT_MEMBER_NAMES.map(name => ({ id: makeId(), name })),
-      expenses: [], createdAt: now, updatedAt: now,
+      expenses: [], baseCurrency: 'TWD', currencies: [...DEFAULT_CURRENCIES], fxRates: {}, createdAt: now, updatedAt: now,
     },
   }
 }
@@ -104,6 +108,42 @@ export function migrateLegacy(membersValue, expensesValue) {
   return data
 }
 
+export function migrateV2(data) {
+  const clean = sanitizeV2(data)
+  return { ...clean, schemaVersion: 3, trip: { ...clean.trip,
+    baseCurrency: 'TWD', currencies: [...DEFAULT_CURRENCIES], fxRates: {},
+    expenses: clean.trip.expenses.map(expense => ({ ...expense, currency: 'TWD', fxRate: 1,
+      fxSource: 'base', amountInBase: expense.amount })),
+  } }
+}
+
+export function sanitizeV3(data) {
+  const trip = data.trip || {}
+  const baseCurrency = trip.baseCurrency in CURRENCIES ? trip.baseCurrency : 'TWD'
+  const old = sanitizeV2(data)
+  const used = old.trip.expenses.map(e => e.currency).filter(code => code in CURRENCIES)
+  const currencies = [...new Set([baseCurrency, ...(Array.isArray(trip.currencies) ? trip.currencies : DEFAULT_CURRENCIES), ...used])]
+    .filter(code => code in CURRENCIES)
+  const fxRates = {}
+  for (const [code, entry] of Object.entries(trip.fxRates || {})) {
+    if (code === baseCurrency || !(code in CURRENCIES) || !entry ||
+      !Number.isFinite(entry.rate) || entry.rate <= 0 || !['official', 'manual'].includes(entry.source)) continue
+    fxRates[code] = { rate: entry.rate, source: entry.source,
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : old.trip.updatedAt,
+      ...(typeof entry.officialDate === 'string' ? { officialDate: entry.officialDate } : {}) }
+  }
+  const expenses = old.trip.expenses.flatMap(expense => {
+    const currency = expense.currency in CURRENCIES ? expense.currency : baseCurrency
+    const fxRate = currency === baseCurrency ? 1 : Number(expense.fxRate)
+    if (!Number.isFinite(fxRate) || fxRate <= 0) return []
+    const fxSource = currency === baseCurrency ? 'base' :
+      ['official', 'manual', 'override'].includes(expense.fxSource) ? expense.fxSource : 'manual'
+    return [{ ...expense, currency, fxRate, fxSource,
+      amountInBase: Number((expense.amount * fxRate).toPrecision(10)) }]
+  })
+  return { ...old, schemaVersion: 3, trip: { ...old.trip, baseCurrency, currencies, fxRates, expenses } }
+}
+
 export function saveTrip(data, storage = globalThis.localStorage) {
   storage.setItem(STORAGE_KEY, JSON.stringify(data))
 }
@@ -111,18 +151,30 @@ export function saveTrip(data, storage = globalThis.localStorage) {
 export function loadTrip(storage = globalThis.localStorage) {
   const raw = storage.getItem(STORAGE_KEY)
   const existing = parse(raw)
-  if (existing?.schemaVersion === 2) {
-    const sanitized = sanitizeV2(existing)
-    if (JSON.stringify(sanitized) === JSON.stringify(existing)) return existing
-    storage.setItem(BACKUP_KEY, raw)
-    saveTrip(sanitized, storage)
+  if (existing?.schemaVersion === 3 && existing.trip && typeof existing.trip === 'object' &&
+      Array.isArray(existing.trip.members) && Array.isArray(existing.trip.expenses)) {
+    const sanitized = sanitizeV3(existing)
+    if (JSON.stringify(sanitized) !== JSON.stringify(existing)) {
+      storage.setItem(BACKUP_KEY, raw)
+      saveTrip(sanitized, storage)
+    }
     return sanitized
   }
   if (raw !== null) storage.setItem(BACKUP_KEY, raw)
+  const v2raw = storage.getItem(V2_KEY)
+  const v2 = parse(v2raw)
+  if (v2?.schemaVersion === 2) {
+    const sanitized = sanitizeV2(v2)
+    if (JSON.stringify(sanitized) !== JSON.stringify(v2)) storage.setItem(V2_BACKUP_KEY, v2raw)
+    const data = migrateV2(sanitized)
+    saveTrip(data, storage)
+    return data
+  }
+  if (v2raw !== null) storage.setItem(V2_BACKUP_KEY, v2raw)
   const legacyMembers = storage.getItem('members')
   const legacyExpenses = storage.getItem('expenses')
   const data = legacyMembers !== null || legacyExpenses !== null
-    ? migrateLegacy(legacyMembers, legacyExpenses) : defaultTrip()
+    ? migrateV2(migrateLegacy(legacyMembers, legacyExpenses)) : defaultTrip()
   saveTrip(data, storage)
   return data
 }

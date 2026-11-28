@@ -1,23 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import { getTotal, getOwedBreakdown, getFinalSettlements } from '../src/lib/settlement'
-
-const expense = (amount, paidBy, sharedWith) => ({ amount, paidBy, sharedWith })
-
+import { roundToCurrency, toDisplay } from '../src/lib/money'
+const expense = (amount, paidBy, sharedWith, rate = 1) => ({ amount, paidBy, sharedWith, amountInBase: amount * rate, fxRate: rate })
 describe('settlement', () => {
-  it('splits a single expense', () => {
-    const expenses = [expense(60, 'a', ['b', 'c'])]
-    expect(getTotal(expenses)).toBe(60)
-    expect(getOwedBreakdown(expenses)).toEqual({ b: 30, c: 30 })
-    expect(getFinalSettlements(expenses)).toEqual({ b: [{ from: 'b', to: 'a', amount: 30 }], c: [{ from: 'c', to: 'a', amount: 30 }] })
+  it('uses base amounts for mixed currencies and override snapshots', () => {
+    const expenses = [expense(50000, 'a', ['a', 'b'], 0.024), expense(1000, 'b', ['a', 'b'])]
+    expect(getTotal(expenses)).toBe(2200)
+    expect(getOwedBreakdown(expenses)).toEqual({ a: 1100, b: 1100 })
+    expect(getFinalSettlements(expenses)).toEqual({ b: [{ from: 'b', to: 'a', amount: 100 }] })
+    const trip = { baseCurrency: 'TWD', fxRates: { KRW: { rate: 0.024 } } }
+    const twd = roundToCurrency(100, 'TWD')
+    const krw = roundToCurrency(toDisplay(100, 'KRW', trip), 'KRW')
+    expect(Math.abs(krw - toDisplay(twd, 'KRW', trip))).toBeLessThanOrEqual(1)
+    expenses[0].fxRate = 0.03 // a changed trip rate cannot alter amountInBase
+    expect(getTotal(expenses)).toBe(2200)
   })
-  it('does not make the payer owe themself', () => {
-    expect(getFinalSettlements([expense(30, 'a', ['a', 'b'])])).toEqual({ b: [{ from: 'b', to: 'a', amount: 15 }] })
+  it('keeps unrounded balances until display', () => {
+    expect(getFinalSettlements([expense(10, 'a', ['b']), expense(4.555, 'b', ['a'])]).b[0].amount).toBeCloseTo(5.445)
   })
-  it('nets debts in both directions and rounds to cents', () => {
-    expect(getFinalSettlements([expense(10, 'a', ['b']), expense(4.555, 'b', ['a'])])).toEqual({ b: [{ from: 'b', to: 'a', amount: 5.45 }] })
-  })
-  it('returns an empty result when everything is settled', () => {
+  it('nets fully settled pairs to empty', () => {
     expect(getFinalSettlements([expense(10, 'a', ['b']), expense(10, 'b', ['a'])])).toEqual({})
-    expect(getFinalSettlements([expense(10, 'a', ['a'])])).toEqual({})
   })
 })

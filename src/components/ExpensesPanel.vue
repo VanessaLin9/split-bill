@@ -23,7 +23,7 @@
           <div class="flex items-center gap-2">
             <span class="bg-cyan-500/20 text-cyan-200 px-2 py-1 rounded text-xs">#{{ index + 1 }}</span>
             <span class="bg-green-500/20 text-green-200 px-2 py-1 rounded text-sm font-semibold">
-              ${{ expense.amount }}{{ t('yuan') }}
+              {{ formatMoney(expense.amount, expense.currency) }}
             </span>
           </div>
           <button
@@ -36,6 +36,7 @@
           </button>
         </div>
 
+        <p class="text-xs text-blue-200 mb-2">≈ {{ formatMoney(expense.amountInBase, trip.baseCurrency) }} · 1 {{ expense.currency }} = {{ expense.fxRate.toPrecision(6) }} {{ trip.baseCurrency }} ({{ t(expense.fxSource) }})</p>
         <div class="text-white font-medium mb-2">
           {{ expense.description || t('untitled') }}
         </div>
@@ -61,8 +62,8 @@
         <div class="mt-3 pt-3 border-t border-white/10">
           <div class="text-xs text-white/50 mb-1">{{ t('split') }}:</div>
           <div class="text-xs text-white/70">
-            <span v-for="person in expense.sharedWith" :key="person">
-              {{ memberNames[person] || person }} → {{ memberNames[expense.paidBy] || expense.paidBy }}: ${{ (expense.amount / expense.sharedWith.length).toFixed(2) }}{{ t('yuan') }}
+            <span v-for="(person, index) in expense.sharedWith" :key="person">
+              {{ memberNames[person] || person }} → {{ memberNames[expense.paidBy] || expense.paidBy }}: {{ formatMoney(splitAmount(expense.amount, expense.sharedWith.length, expense.currency)[index], expense.currency) }}
               <br />
             </span>
           </div>
@@ -73,6 +74,7 @@
 </template>
 
 <script setup>
-defineProps({ expenses: Array, memberNames: Object, t: Function, grid: Boolean })
+import { formatMoney, splitAmount } from '../lib/money'
+defineProps({ expenses: Array, memberNames: Object, trip: Object, t: Function, grid: Boolean })
 defineEmits(['remove'])
 </script>

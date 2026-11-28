@@ -9,6 +9,12 @@
       <h2 class="text-lg text-white font-semibold">{{ t('settlementSummary') }}</h2>
     </div>
 
+    <div class="mb-3">
+      <label class="text-sm text-white/80 mr-2">{{ t('displayCurrency') }}</label>
+      <select :value="displayCurrency" @change="$emit('update:displayCurrency', $event.target.value)" class="bg-slate-800 border border-white/20 text-white rounded px-2 py-1">
+        <option v-for="code in trip.currencies" :key="code" :disabled="code !== trip.baseCurrency && !trip.fxRates[code]?.rate">{{ code }}</option>
+      </select>
+    </div>
     <div v-if="expenses.length === 0" class="text-center py-8 bg-white/5 rounded-xl border border-white/10">
       <div class="text-white/60">{{ t('noExpenses') }}</div>
     </div>
@@ -22,17 +28,9 @@
             </svg>
             <span class="font-medium text-sm">{{ t('totalExpenses') }}</span>
           </div>
-          <div class="text-2xl font-bold text-white">${{ totalExpenses.toFixed(2) }}{{ t('yuan') }}</div>
+          <div class="text-2xl font-bold text-white">{{ money(totalExpenses) }}</div>
         </div>
-        <!-- <div class="text-center">
-          <div class="flex items-center justify-center gap-1 text-pink-200 mb-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-            </svg>
-            <span class="font-medium text-sm">{{ t('perPerson') }}</span>
-          </div>
-          <div class="text-xl font-semibold text-white">${{ perPersonAverage.toFixed(2) }}{{ t('yuan') }}</div>
-        </div> -->
+
       </div>
 
       <div>
@@ -46,7 +44,7 @@
             <span class="bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 px-2 py-1 rounded text-sm">
               {{ member.name }}
             </span>
-            <span class="text-white font-medium text-sm">${{ (expenseBreakdown[member.id] || 0).toFixed(2) }}{{ t('yuan') }}</span>
+            <span class="text-white font-medium text-sm">{{ money(expenseBreakdown[member.id] || 0) }}</span>
           </div>
         </div>
       </div>
@@ -81,7 +79,7 @@
         {{ memberNames[item.to] || item.to }}
       </span>
       <span class="bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-1 rounded text-sm font-semibold">
-        ${{ item.amount.toFixed(2) }}{{ t('yuan') }}
+        {{ money(item.amount) }}
       </span>
     </li>
   </ul>
@@ -94,6 +92,9 @@
 </template>
 
 <script setup>
-defineProps({ members: Array, expenses: Array, totalExpenses: Number, perPersonAverage: Number,
-  expenseBreakdown: Object, finalSettlements: Object, memberNames: Object, t: Function, leftAlign: Boolean })
+import { formatMoney, toDisplay } from '../lib/money'
+const props = defineProps({ members: Array, expenses: Array, totalExpenses: Number, perPersonAverage: Number,
+  expenseBreakdown: Object, finalSettlements: Object, memberNames: Object, trip: Object, displayCurrency: String, t: Function, leftAlign: Boolean })
+defineEmits(['update:displayCurrency'])
+const money = amount => formatMoney(toDisplay(amount, props.displayCurrency, props.trip), props.displayCurrency)
 </script>
