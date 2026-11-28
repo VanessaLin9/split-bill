@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BACKUP_KEY, STORAGE_KEY, V2_KEY, defaultTrip, loadTrip } from '../src/lib/storage'
+import { SUPPORTED_CURRENCIES } from '../src/config/currencies'
 import { getFinalSettlements, getOwedBreakdown, getTotal } from '../src/lib/settlement'
 
 function memoryStorage(initial = {}) {
@@ -18,7 +19,7 @@ describe('v3 storage', () => {
     const data = loadTrip(storage)
     expect(data.schemaVersion).toBe(3)
     expect(data.trip.baseCurrency).toBe('TWD')
-    expect(data.trip.currencies).toEqual(['TWD', 'KRW'])
+    expect(data.trip.currencies).toEqual(SUPPORTED_CURRENCIES)
     expect(data.trip.expenses[0]).toMatchObject({ currency: 'TWD', fxRate: 1, fxSource: 'base', amountInBase: 100 })
     expect(getTotal(data.trip.expenses)).toBe(getTotal(v2.trip.expenses))
     expect(getOwedBreakdown(data.trip.expenses)).toEqual(getOwedBreakdown(v2.trip.expenses))
@@ -46,10 +47,40 @@ describe('v3 storage', () => {
     expect(loadTrip(store).trip.members[0].name).toBe('A')
     expect(store.getItem(BACKUP_KEY)).toBe(raw)
   })
-  it('uses v3 when valid and retains a manual rate', () => {
+  it('prefers v3, drops unsupported trip rates, and preserves historical snapshots', () => {
     const data = defaultTrip()
-    data.trip.fxRates.KRW = { rate: 0.023, source: 'manual', updatedAt: '2026-01-01' }
-    const storage = memoryStorage({ [STORAGE_KEY]: JSON.stringify(data) })
-    expect(loadTrip(storage).trip.fxRates.KRW).toEqual(data.trip.fxRates.KRW)
+    data.trip.currencies = ['TWD', 'KRW']
+    data.trip.fxRates = {
+      KRW: { rate: 0.023, source: 'manual', updatedAt: '2026-01-01' },
+      USD: { rate: 32, source: 'override', updatedAt: '2026-01-01' },
+      EUR: { rate: 34, source: 'official', updatedAt: '2026-01-01', officialDate: '2025-12-31' },
+    }
+    const a = data.trip.members[0].id
+    data.trip.expenses = ['manual', 'override'].map((fxSource, index) => ({
+      id: `saved-${index}`, amount: 50000, currency: 'KRW', fxRate: 0.023256789123,
+      // Deliberately differs from the rounded product: loading must not recalculate it.
+      amountInBase: 1163.456789123, fxSource, paidBy: a, sharedWith: [a],
+      description: 'historical', createdAt: data.trip.createdAt,
+    }))
+    const v2 = { schemaVersion: 2, trip: { members: [], expenses: [] } }
+    const store = memoryStorage({ [STORAGE_KEY]: JSON.stringify(data), [V2_KEY]: JSON.stringify(v2) })
+    const loaded = loadTrip(store)
+    expect(loaded.trip.members).toEqual(data.trip.members)
+    expect(loaded.trip.currencies).toEqual(SUPPORTED_CURRENCIES)
+    expect(loaded.trip.fxRates).toEqual({ EUR: data.trip.fxRates.EUR })
+    expect(loaded.trip.expenses).toEqual(data.trip.expenses)
+    expect(loadTrip(store)).toEqual(loaded)
+    expect(JSON.parse(store.getItem(STORAGE_KEY))).toEqual(loaded)
+  })
+  it('keeps an existing non-TWD base and its saved snapshots', () => {
+    const data = defaultTrip()
+    const a = data.trip.members[0].id
+    data.trip.baseCurrency = 'KRW'
+    data.trip.expenses = [{ id: 'saved', amount: 50000, currency: 'KRW', fxRate: 1.01,
+      fxSource: 'override', amountInBase: 50500.123, paidBy: a, sharedWith: [a],
+      description: '', createdAt: data.trip.createdAt }]
+    const store = memoryStorage({ [STORAGE_KEY]: JSON.stringify(data) })
+    expect(loadTrip(store).trip.expenses).toEqual(data.trip.expenses)
+    expect(loadTrip(store).trip.baseCurrency).toBe('KRW')
   })
 })

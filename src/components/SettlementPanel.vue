@@ -12,7 +12,7 @@
     <div class="mb-3">
       <label class="text-sm text-white/80 mr-2">{{ t('displayCurrency') }}</label>
       <select :value="effectiveDisplayCurrency" @change="$emit('update:displayCurrency', $event.target.value)" class="bg-slate-800 border border-white/20 text-white rounded px-2 py-1">
-        <option v-for="code in trip.currencies" :key="code" :disabled="code !== trip.baseCurrency && !trip.fxRates[code]?.rate">{{ code }}</option>
+        <option v-for="code in SUPPORTED_CURRENCIES" :key="code" :disabled="toDisplay(0, code, trip) === null">{{ code }}</option>
       </select>
     </div>
     <div v-if="expenses.length === 0" class="text-center py-8 bg-white/5 rounded-xl border border-white/10">
@@ -93,6 +93,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { SUPPORTED_CURRENCIES } from '../config/currencies'
 import { formatMoney, roundShares, toDisplay } from '../lib/money'
 const props = defineProps({ members: Array, expenses: Array, totalExpenses: Number, perPersonAverage: Number,
   expenseBreakdown: Object, finalSettlements: Object, memberNames: Object, trip: Object, displayCurrency: String, t: Function, leftAlign: Boolean })

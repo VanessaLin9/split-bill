@@ -14,10 +14,11 @@ async function request(url, fetcher) {
   } finally { clearTimeout(timer) }
 }
 
-export function deriveActualRate(baseAmount, foreignAmount) {
-  const a = Number(baseAmount), b = Number(foreignAmount)
-  if (!valid(a) || !valid(b)) throw new Error('Invalid exchange amounts')
-  return a / b
+export function getOfficialRate(code, trip) {
+  if (!SUPPORTED_CURRENCIES.includes(code)) return null
+  if (code === trip.baseCurrency) return 1
+  const entry = trip.fxRates[code]
+  return entry?.source === 'official' && valid(entry.rate) ? entry.rate : null
 }
 
 export async function fetchOfficialRates(base, { fetcher = globalThis.fetch, storage = globalThis.localStorage,

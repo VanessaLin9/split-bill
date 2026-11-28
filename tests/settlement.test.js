@@ -3,12 +3,12 @@ import { getTotal, getOwedBreakdown, getFinalSettlements } from '../src/lib/sett
 import { roundToCurrency, toDisplay } from '../src/lib/money'
 const expense = (amount, paidBy, sharedWith, rate = 1) => ({ amount, paidBy, sharedWith, amountInBase: amount * rate, fxRate: rate })
 describe('settlement', () => {
-  it('uses base amounts for mixed currencies and override snapshots', () => {
+  it('uses saved base amounts for mixed currencies', () => {
     const expenses = [expense(50000, 'a', ['a', 'b'], 0.024), expense(1000, 'b', ['a', 'b'])]
     expect(getTotal(expenses)).toBe(2200)
     expect(getOwedBreakdown(expenses)).toEqual({ a: 1100, b: 1100 })
     expect(getFinalSettlements(expenses)).toEqual({ b: [{ from: 'b', to: 'a', amount: 100 }] })
-    const trip = { baseCurrency: 'TWD', fxRates: { KRW: { rate: 0.024 } } }
+    const trip = { baseCurrency: 'TWD', fxRates: { KRW: { rate: 0.024, source: 'official' } } }
     const twd = roundToCurrency(100, 'TWD')
     const krw = roundToCurrency(toDisplay(100, 'KRW', trip), 'KRW')
     expect(Math.abs(krw - toDisplay(twd, 'KRW', trip))).toBeLessThanOrEqual(1)

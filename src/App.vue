@@ -95,6 +95,8 @@
       </div>
     </header>
 
+    <OfficialRates :trip="trip" :t="t" :loading="ratesLoading" :status="rateStatus" @refresh="refreshRates(true)" />
+
     <!-- 手機版內容 -->
     <div v-if="!isDesktop" class="flex flex-col h-screen bg-gradient-to-b from-slate-900 via-blue-900 to-indigo-900">
       <!-- 手機版摘要欄 -->
@@ -150,14 +152,13 @@
             v-else-if="activeTab === 'add'"
             :members="members"
             :amount="newExpense.amount"
-            :currency="newExpense.currency" :overrideRate="newExpense.overrideRate" :trip="trip"
+            :currency="newExpense.currency" :trip="trip"
             :paidBy="newExpense.paidBy"
             :description="newExpense.description"
             :sharedWith="newExpense.sharedWith"
             :t="t"
             @update:amount="val => (newExpense.amount = val)"
-            @update:currency="val => { newExpense.currency = val; newExpense.overrideRate = '' }"
-            @update:overrideRate="val => (newExpense.overrideRate = val)"
+            @update:currency="val => (newExpense.currency = val)"
             @update:paidBy="val => (newExpense.paidBy = val)"
             @update:description="val => (newExpense.description = val)"
             @toggle-participant="member => {
@@ -192,7 +193,6 @@
             :memberNames="memberNames"
             :t="t"
           />
-          <CurrencyPanel v-else-if="activeTab === 'currency'" :trip="trip" :expenses="expenses" :t="t" :loading="ratesLoading" :status="rateStatus" :stale="ratesStale" @base="changeBase" @toggle="toggleCurrencyAndFetch" @rate="setRate" @refresh="refreshRates(true)" @apply="confirmApplyRates" />
         </div>
       </div>
     </div>
@@ -230,14 +230,13 @@
           <AddExpensePanel
             :members="members"
             :amount="newExpense.amount"
-            :currency="newExpense.currency" :overrideRate="newExpense.overrideRate" :trip="trip"
+            :currency="newExpense.currency" :trip="trip"
             :paidBy="newExpense.paidBy"
             :description="newExpense.description"
             :sharedWith="newExpense.sharedWith"
             :t="t"
             @update:amount="val => (newExpense.amount = val)"
-            @update:currency="val => { newExpense.currency = val; newExpense.overrideRate = '' }"
-            @update:overrideRate="val => (newExpense.overrideRate = val)"
+            @update:currency="val => (newExpense.currency = val)"
             @update:paidBy="val => (newExpense.paidBy = val)"
             @update:description="val => (newExpense.description = val)"
             @toggle-participant="member => {
@@ -266,9 +265,6 @@
         </div>
 
         <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl col-span-3">
-          <CurrencyPanel :trip="trip" :expenses="expenses" :t="t" :loading="ratesLoading" :status="rateStatus" :stale="ratesStale" @base="changeBase" @toggle="toggleCurrencyAndFetch" @rate="setRate" @refresh="refreshRates(true)" @apply="confirmApplyRates" />
-        </div>
-        <div class="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-xl col-span-3">
           <ExpensesPanel
             :expenses="expenses"
             :trip="trip"
@@ -289,9 +285,10 @@ import MembersPanel from './components/MembersPanel.vue'
 import AddExpensePanel from './components/AddExpensePanel.vue'
 import ExpensesPanel from './components/ExpensesPanel.vue'
 import SettlementPanel from './components/SettlementPanel.vue'
-import CurrencyPanel from './components/CurrencyPanel.vue'
+import OfficialRates from './components/OfficialRates.vue'
+import { SUPPORTED_CURRENCIES } from './config/currencies'
 import { formatMoney } from './lib/money'
-import { fetchOfficialRates } from './lib/fx'
+import { fetchOfficialRates, getOfficialRate } from './lib/fx'
 import { tabs } from './config/tabs'
 import { useLanguage } from './composable/useLanguage'
 import { useTrip } from './composable/useTrip'
@@ -301,13 +298,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 // 語言相關（composable）
 const { language, t, toggleLanguage } = useLanguage()
 
-const { trip, members, expenses, addMember: addTripMember, removeMember, addExpense: addNewExpense, removeExpense, restoreDefaults, setBaseCurrency, toggleCurrency, setRate, applyOfficialRates, applyCurrentRatesToExpenses } = useTrip()
+const { trip, members, expenses, addMember: addTripMember, removeMember, addExpense: addNewExpense, removeExpense, restoreDefaults, applyOfficialRates } = useTrip()
 const displayCurrency = ref(trip.value.baseCurrency)
 const ratesLoading = ref(false)
 const rateStatus = ref('')
-const ratesStale = ref(false)
 const lastCurrencyKey = 'split-bill:last-currency'
-const lastCurrency = () => { const code = localStorage.getItem(lastCurrencyKey); return trip.value.currencies.includes(code) ? code : trip.value.baseCurrency }
+const lastCurrency = () => { const code = localStorage.getItem(lastCurrencyKey); return SUPPORTED_CURRENCIES.includes(code) ? code : trip.value.baseCurrency }
 const saveLastCurrency = code => localStorage.setItem(lastCurrencyKey, code)
 const newMember = ref('')
 const memberNames = computed(() => Object.fromEntries(members.value.map(member => [member.id, member.name])))
@@ -322,7 +318,7 @@ const newExpense = ref({
   amount: '',
   paidBy: '',
   description: '',
-  sharedWith: [], currency: lastCurrency(), overrideRate: '',
+  sharedWith: [], currency: lastCurrency(),
 })
 
 const isDesktop = ref(false)
@@ -341,7 +337,7 @@ const checkScreenSize = () => {
 onMounted(() => {
   checkScreenSize()
   window.addEventListener('resize', checkScreenSize)
-  if (trip.value.currencies.some(code => code !== trip.value.baseCurrency && !trip.value.fxRates[code])) refreshRates(false)
+  refreshRates(false)
 })
 
 onUnmounted(() => {
@@ -355,46 +351,35 @@ const submitNewExpense = () => {
     paidBy: newExpense.value.paidBy,
     description: newExpense.value.description,
     sharedWith: newExpense.value.sharedWith,
-    currency: newExpense.value.currency, overrideRate: newExpense.value.overrideRate,
+    currency: newExpense.value.currency,
   })
   if (!ok) {
     alert(!newExpense.value.sharedWith.length ? t('pleaseSelectParticipants') :
-      newExpense.value.currency !== trip.value.baseCurrency && !newExpense.value.overrideRate && !trip.value.fxRates[newExpense.value.currency] ? t('noRateForExpense') : t('invalidExpense'))
+      getOfficialRate(newExpense.value.currency, trip.value) === null ? t('noRateForExpense') : t('invalidExpense'))
     return
   }
   saveLastCurrency(newExpense.value.currency)
-  newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [], currency: lastCurrency(), overrideRate: '' }
+  newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [], currency: lastCurrency() }
 }
 
 
-async function refreshRates(force) {
+async function refreshRates(force = false) {
+  if (ratesLoading.value) return
   ratesLoading.value = true
   rateStatus.value = ''
+  // Ignore a response if the user resets the trip while the request is pending.
+  const requestedTripId = trip.value.id
   try {
     const result = await fetchOfficialRates(trip.value.baseCurrency, { force })
-    const manual = trip.value.currencies.filter(code => trip.value.fxRates[code]?.source === 'manual')
-    const overwrite = force && manual.length && confirm(t('confirmManualOverwrite').replace('{currencies}', manual.join(', ')))
-    ratesStale.value = result.stale
-    applyOfficialRates(result, overwrite)
-    rateStatus.value = result.stale ? t('staleRates').replace('{date}', result.date || '?') :
-      t('ratesLoaded').replace('{provider}', result.provider).replace('{date}', result.date || '?')
-  } catch { ratesStale.value = false; rateStatus.value = t('ratesUnavailable') }
-  finally { ratesLoading.value = false }
-}
-function changeBase(code) {
-  if (setBaseCurrency(code)) {
-    displayCurrency.value = code
-    newExpense.value.currency = code
-    refreshRates(false)
+    if (trip.value.id !== requestedTripId) return
+    applyOfficialRates(result)
+    rateStatus.value = result.stale ? 'staleRates' : ''
+  } catch {
+    if (trip.value.id === requestedTripId) rateStatus.value = 'ratesUnavailable'
+  } finally {
+    ratesLoading.value = false
+    if (trip.value.id !== requestedTripId) refreshRates(false)
   }
-}
-function toggleCurrencyAndFetch(code) {
-  if (toggleCurrency(code) && trip.value.currencies.includes(code) && !trip.value.fxRates[code]) refreshRates(false)
-  if (!trip.value.currencies.includes(newExpense.value.currency)) newExpense.value.currency = trip.value.baseCurrency
-  if (!trip.value.currencies.includes(displayCurrency.value)) displayCurrency.value = trip.value.baseCurrency
-}
-function confirmApplyRates() {
-  if (confirm(t('confirmApplyRates'))) applyCurrentRatesToExpenses()
 }
 
 // 恢復預設設定
@@ -402,10 +387,10 @@ const restoreDefaultSettings = () => {
   if (confirm(t('confirmRestore'))) {
     restoreDefaults()
     newMember.value = ''
-    newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [], currency: trip.value.baseCurrency, overrideRate: '' }
+    newExpense.value = { amount: '', paidBy: '', description: '', sharedWith: [], currency: trip.value.baseCurrency }
     displayCurrency.value = trip.value.baseCurrency
     rateStatus.value = ''
-    ratesStale.value = false
+    refreshRates(false)
     
     alert(t('restoreSuccess'))
   }
